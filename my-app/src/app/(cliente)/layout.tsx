@@ -1,8 +1,8 @@
-// src/app/(dashboard)/layout.tsx
+// src/app/(cliente)/layout.tsx
 import { Header } from "@/components/layout/Header";
-import SidebarDashboard from "@/components/layout/SidebarDashboard";
+import SidebarCuenta from "@/components/layout/SidebarCuenta";
 
-export default function DashboardLayout({
+export default function ClienteLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -17,12 +17,13 @@ export default function DashboardLayout({
           minHeight: "calc(100vh - 64px)",
         }}
       >
-        <SidebarDashboard />
+        <SidebarCuenta />
 
         <main
           style={{
             flex: 1,
             padding: "24px",
+            background: "var(--color-background)",
           }}
         >
           {children}

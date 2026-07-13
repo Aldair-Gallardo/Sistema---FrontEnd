@@ -1,0 +1,54 @@
+.dashboard-menu {
+    background: var(--color-sidebar) !important;
+    border-inline-end: none !important;
+}
+
+/* Opciones del menú */
+.dashboard-menu .ant-menu-item {
+    height: 52px !important;
+    line-height: 52px !important;
+    margin: 12px 10px !important;
+    border-radius: 10px !important;
+
+    color: #000 !important;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+/* Texto */
+.dashboard-menu .ant-menu-title-content,
+.dashboard-menu .ant-menu-title-content a {
+    color: #000 !important;
+}
+
+/* Iconos */
+.dashboard-menu .anticon {
+    color: #000 !important;
+    font-size: 17px;
+}
+
+/* Hover */
+.dashboard-menu .ant-menu-item:hover {
+    background: #d7c2ab !important;
+}
+
+.dashboard-menu .ant-menu-item:hover a,
+.dashboard-menu .ant-menu-item:hover .anticon {
+    color: #000 !important;
+}
+
+/* Seleccionado */
+.dashboard-menu .ant-menu-item-selected {
+    background: #ccb08b !important;
+}
+
+.dashboard-menu .ant-menu-item-selected a,
+.dashboard-menu .ant-menu-item-selected .anticon {
+    color: #000 !important;
+}
+
+/* Menú inferior */
+.logout-menu {
+    border-top: 1px solid var(--color-sidebar-border) !important;
+    padding-top: 10px;
+}
