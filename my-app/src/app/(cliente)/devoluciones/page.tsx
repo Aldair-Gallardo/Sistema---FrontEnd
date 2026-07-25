@@ -1,8 +1,7 @@
-// src/app/(cliente)/devolucione/page.tsx
+// src/app/(cliente)/devoluciones/page.tsx
+import { DevolucionesList } from "@/components/cliente/DevolucionesList";
+import { mockDevoluciones } from "@/lib/mock/cliente.mock";
+
 export default function DevolucionesPage() {
-  return (
-    <div className="p-8">
-      <p>Contenido de la página de devoluciones (En construcción)</p>
-    </div>
-  );
+  return <DevolucionesList devoluciones={mockDevoluciones} />;
 }

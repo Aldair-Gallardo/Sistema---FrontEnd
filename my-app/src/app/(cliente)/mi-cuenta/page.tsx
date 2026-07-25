@@ -1,8 +1,7 @@
 // src/app/(cliente)/mi-cuenta/page.tsx
+import { PerfilForm } from "@/components/cliente/PerfilForm";
+import { mockUsuario } from "@/lib/mock/cliente.mock";
+
 export default function MiCuentaPage() {
-  return (
-    <div className="p-8">
-      <p>Contenido de la página de mi cuenta  (En construcción)</p>
-    </div>
-  );
+  return <PerfilForm usuario={mockUsuario} />;
 }

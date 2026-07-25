@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -18,8 +19,21 @@ import './SidebarDashboard.css';
 
 const { Sider } = Layout;
 
+const RUTAS_MENU: { key: string; ruta: string }[] = [
+  { key: 'mis-pedidos', ruta: '/mis-pedidos' },
+  { key: 'direcciones', ruta: '/direcciones' },
+  { key: 'metodos-de-pago', ruta: '/metodos-de-pago' },
+  { key: 'devoluciones', ruta: '/devoluciones' },
+  { key: 'mi-cuenta', ruta: '/mi-cuenta' },
+  { key: 'cerrar-sesion', ruta: '/cerrar-sesion' },
+];
+
 export default function SidebarCuenta() {
   const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
+
+  const selectedKey =
+    RUTAS_MENU.find(({ ruta }) => pathname?.startsWith(ruta))?.key ?? 'mi-cuenta';
 
   return (
     <Sider
@@ -69,7 +83,7 @@ export default function SidebarCuenta() {
       >
         <Menu
           mode="inline"
-          defaultSelectedKeys={['mi-cuenta']}
+          selectedKeys={[selectedKey]}
           className="dashboard-menu"
           items={[
             {
@@ -106,13 +120,13 @@ export default function SidebarCuenta() {
 
         <Menu
           mode="inline"
-          selectable={false}
+          selectedKeys={selectedKey === 'cerrar-sesion' ? ['logout'] : []}
           className="dashboard-menu logout-menu"
           items={[
             {
               key: 'logout',
               icon: <LogoutOutlined />,
-              label: <Link href="/logout">Cerrar sesión</Link>,
+              label: <Link href="/cerrar-sesion">Cerrar sesión</Link>,
             },
           ]}
         />
