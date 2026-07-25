@@ -1,8 +1,7 @@
-// src/app/(cliente)/metodos-de-pagos/page.tsx
+// src/app/(cliente)/metodos-de-pago/page.tsx
+import { MetodosPagoList } from "@/components/cliente/MetodosPagoList";
+import { mockMetodosPago } from "@/lib/mock/cliente.mock";
+
 export default function MetodosPagosPage() {
-  return (
-    <div className="p-8">
-      <p>Contenido de la página de metodos de pagos (En construcción)</p>
-    </div>
-  );
+  return <MetodosPagoList metodos={mockMetodosPago} />;
 }

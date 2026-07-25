@@ -1,8 +1,7 @@
 // src/app/(cliente)/direcciones/page.tsx
+import { DireccionesList } from "@/components/cliente/DireccionesList";
+import { mockDirecciones } from "@/lib/mock/cliente.mock";
+
 export default function DireccionesPage() {
-  return (
-    <div className="p-8">
-      <p>Contenido de la página de direcciones  (En construcción)</p>
-    </div>
-  );
+  return <DireccionesList direcciones={mockDirecciones} />;
 }

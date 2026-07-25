@@ -81,7 +81,7 @@ export function middleware(request: NextRequest) {
   // ==========================
   // Login / Registro
   // ==========================
-  if (isAuthRoute && (token || DEV_MODE)) {
+  if (isAuthRoute && token) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
