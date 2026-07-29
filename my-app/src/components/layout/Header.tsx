@@ -18,8 +18,10 @@ const menuItems = [
 
 //  Datos de prueba a mano, mientras no hay backend de usuarios conectado.
 // Cambia estos dos valores para probar los distintos escenarios del layout de navegación:
-const hayUsuarioLogueado = true;   // false = nadie ha iniciado sesión
-const rolDelUsuario: string = "admin";   // "cliente" | "admin" | "vendedor" | etc.
+
+const hayUsuarioLogueado = false;   // false = nadie ha iniciado sesión
+const rolDelUsuario = "admin";   // "cliente" | "admin" | "vendedor" | etc.
+
 
 export function Header() {
   const router = useRouter();
