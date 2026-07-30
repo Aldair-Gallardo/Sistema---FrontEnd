@@ -5,21 +5,7 @@
 // "@/types/cliente" para que, al conectar la API real, solo haya que
 // reemplazar estas constantes por llamadas a "@/lib/api/cliente".
 
-import type {
-  Devolucion,
-  Direccion,
-  MetodoPago,
-  Pedido,
-  UsuarioCliente,
-} from "@/types/cliente";
-
-export const mockUsuario: UsuarioCliente = {
-  nombre: "Aldair Gallardo",
-  correo: "aldairgallardo0903@gmail.com",
-  telefono: "6899-4204",
-  rol: "Cliente",
-  iniciales: "AG",
-};
+import type { Devolucion, Direccion, Pedido } from "@/types/cliente";
 
 export const mockPedidos: Pedido[] = [
   {
@@ -82,32 +68,6 @@ export const mockDirecciones: Direccion[] = [
     calle: "Av. Balboa, Torre Global Bank, Piso 12",
     ciudad: "Ciudad de Panamá, Panamá",
     referencia: "Recepción en piso 12",
-    principal: false,
-  },
-];
-
-export const mockMetodosPago: MetodoPago[] = [
-  {
-    id: "mp-1",
-    tipo: "visa",
-    titular: "Aldair Gallardo",
-    ultimosDigitos: "4821",
-    vencimiento: "08/2026",
-    principal: true,
-  },
-  {
-    id: "mp-2",
-    tipo: "mastercard",
-    titular: "Aldair Gallardo",
-    ultimosDigitos: "9034",
-    vencimiento: "06/2028",
-    principal: false,
-  },
-  {
-    id: "mp-3",
-    tipo: "paypal",
-    titular: "Aldair Gallardo",
-    correo: "usuarioprueba1212@gmail.com",
     principal: false,
   },
 ];

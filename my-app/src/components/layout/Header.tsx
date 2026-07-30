@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, Input } from "antd";
 import { UserOutlined, ShoppingCartOutlined } from "@ant-design/icons";
+import { useAuth } from "@/hooks/useAuth";
+import { isStaffRole } from "@/lib/roles";
 
 const { Search } = Input;
 
@@ -16,17 +18,12 @@ const menuItems = [
   { key: "contacto", label: <Link href="/contacto">CONTACTO</Link> },
 ];
 
-//  Datos de prueba a mano, mientras no hay backend de usuarios conectado.
-// Cambia estos dos valores para probar los distintos escenarios del layout de navegación:
-
-const hayUsuarioLogueado = false;   // false = nadie ha iniciado sesión
-const rolDelUsuario = "admin";   // "cliente" | "admin" | "vendedor" | etc.
-
-
 export function Header() {
   const router = useRouter();
+  const { user } = useAuth();
 
-  const esUsuarioInterno = hayUsuarioLogueado && rolDelUsuario !== "cliente";
+  const hayUsuarioLogueado = !!user;
+  const esUsuarioInterno = isStaffRole(user?.role);
 
   const handleSearch = (value: string) => {
     const query = value.trim();
@@ -65,7 +62,7 @@ export function Header() {
 
         {esUsuarioInterno && (
           <Link
-            href="/inicio-admin"
+            href="/panel"
             className="text-text-light text-sm font-semibold no-underline"
           >
             Administrador

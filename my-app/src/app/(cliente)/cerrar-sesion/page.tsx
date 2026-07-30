@@ -1,6 +1,6 @@
 // src/app/(cliente)/cerrar-sesion/page.tsx
-import { CerrarSesionConfirm } from "@/components/cliente/CerrarSesionConfirm";
+import { CerrarSesionConfirm } from "@/components/auth/CerrarSesionConfirm";
 
 export default function CerrarSesionPage() {
-  return <CerrarSesionConfirm />;
+  return <CerrarSesionConfirm cancelarHref="/mi-cuenta" />;
 }

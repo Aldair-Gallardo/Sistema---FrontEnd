@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   MenuFoldOutlined,
@@ -13,13 +13,53 @@ import {
   LogoutOutlined,
 } from '@ant-design/icons';
 import { Button, Layout, Menu } from 'antd';
+import { useAuth } from '@/hooks/useAuth';
+import { canAccessRoute } from '@/lib/roles';
 
 import './SidebarDashboard.css';
 
 const { Sider } = Layout;
 
+const MENU_ITEMS_BASE = [
+  {
+    key: 'panel',
+    ruta: '/panel',
+    icon: <DashboardOutlined />,
+    label: <Link href="/panel">Panel</Link>,
+  },
+  {
+    key: 'usuarios',
+    ruta: '/usuarios',
+    icon: <UserOutlined />,
+    label: <Link href="/usuarios">Usuarios</Link>,
+  },
+  {
+    key: 'productos',
+    ruta: '/productos',
+    icon: <ShoppingOutlined />,
+    label: <Link href="/productos">Productos</Link>,
+  },
+  {
+    key: 'finanzas',
+    ruta: '/finanzas',
+    icon: <DollarOutlined />,
+    label: <Link href="/finanzas">Finanzas</Link>,
+  },
+  {
+    key: 'permisos',
+    ruta: '/permisos',
+    icon: <SafetyCertificateOutlined />,
+    label: <Link href="/permisos">Permisos</Link>,
+  },
+];
+
 export default function SidebarDashboard() {
   const [collapsed, setCollapsed] = useState(false);
+  const { user } = useAuth();
+
+  const menuItems = MENU_ITEMS_BASE.filter(({ ruta }) => canAccessRoute(ruta, user?.role)).map(
+    ({ key, icon, label }) => ({ key, icon, label })
+  );
 
   return (
     <Sider
@@ -71,33 +111,7 @@ export default function SidebarDashboard() {
           mode="inline"
           defaultSelectedKeys={['panel']}
           className="dashboard-menu"
-          items={[
-            {
-              key: 'panel',
-              icon: <DashboardOutlined />,
-              label: <Link href="/panel">Panel</Link>,
-            },
-            {
-              key: 'usuarios',
-              icon: <UserOutlined />,
-              label: <Link href="/usuarios">Usuarios</Link>,
-            },
-            {
-              key: 'productos',
-              icon: <ShoppingOutlined />,
-              label: <Link href="/productos">Productos</Link>,
-            },
-            {
-              key: 'finanzas',
-              icon: <DollarOutlined />,
-              label: <Link href="/finanzas">Finanzas</Link>,
-            },
-            {
-              key: 'permisos',
-              icon: <SafetyCertificateOutlined />,
-              label: <Link href="/permisos">Permisos</Link>,
-            },
-          ]}
+          items={menuItems}
         />
 
         <Menu
