@@ -38,7 +38,18 @@ export type TipoMetodoPago = "visa" | "mastercard" | "paypal";
 export interface MetodoPago {
   id: string;
   tipo: TipoMetodoPago;
-  titular: string;
+  /** Texto ya armado por el backend, ej. "Visa terminada en 4821" o "PayPal". */
+  etiqueta: string;
+  titular?: string;
+  vencimiento?: string;
+  correo?: string;
+  principal: boolean;
+}
+
+/** Lo que envía el formulario de Agregar/Editar; se traduce a la forma del backend en lib/api/cliente.ts. */
+export interface MetodoPagoInput {
+  tipo: TipoMetodoPago;
+  titular?: string;
   ultimosDigitos?: string;
   vencimiento?: string;
   correo?: string;

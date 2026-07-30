@@ -1,0 +1,19 @@
+// src/lib/api/auth.ts
+// Llamadas de autenticación contra /auth (ver teca-backend/backend/app/routers/auth.py).
+
+import { api } from "@/lib/api/client";
+import type { User } from "@/types/user";
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  must_change_password: boolean;
+  user: User;
+}
+
+export async function loginRequest(email: string, password: string): Promise<LoginResponse> {
+  return api("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}

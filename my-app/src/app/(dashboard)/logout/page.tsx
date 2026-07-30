@@ -1,8 +1,6 @@
-// src/app/(dashboard)/logouts/page.tsx
+// src/app/(dashboard)/logout/page.tsx
+import { CerrarSesionConfirm } from "@/components/auth/CerrarSesionConfirm";
+
 export default function LogoutAdminPage() {
-  return (
-    <div className="p-8">
-      <p>Contenido de la pagina de cerrar sesión  (En construcción)</p>
-    </div>
-  );
+  return <CerrarSesionConfirm cancelarHref="/panel" />;
 }

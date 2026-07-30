@@ -1,22 +1,69 @@
 // src/components/cliente/PerfilForm.tsx
 'use client';
 
-import { Avatar, Button, Form, Input, message } from 'antd';
+import { useEffect, useState } from 'react';
+import { Avatar, Button, Form, Input, Spin, message } from 'antd';
+import { actualizarPerfil, cambiarPassword, obtenerPerfil } from '@/lib/api/cliente';
+import { useAuth } from '@/hooks/useAuth';
 import type { UsuarioCliente } from '@/types/cliente';
 
-export function PerfilForm({ usuario }: { usuario: UsuarioCliente }) {
+export function PerfilForm() {
   const [infoForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
+  const { updateUser } = useAuth();
 
-  // Sin backend conectado todavía: por ahora solo confirmamos visualmente el envío.
-  const handleGuardarInfo = () => {
-    message.success('Cambios guardados (simulado, aún sin backend)');
-  };
+  const [usuario, setUsuario] = useState<UsuarioCliente | null>(null);
+  const [guardandoInfo, setGuardandoInfo] = useState(false);
+  const [guardandoPassword, setGuardandoPassword] = useState(false);
 
-  const handleActualizarPassword = () => {
-    message.success('Contraseña actualizada (simulado, aún sin backend)');
-    passwordForm.resetFields();
-  };
+  useEffect(() => {
+    obtenerPerfil()
+      .then((data) => {
+        setUsuario(data);
+        infoForm.setFieldsValue({ nombre: data.nombre, telefono: data.telefono, correo: data.correo });
+      })
+      .catch((error) => message.error(error instanceof Error ? error.message : 'No se pudo cargar tu perfil'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleGuardarInfo(values: { nombre: string; telefono?: string }) {
+    setGuardandoInfo(true);
+    try {
+      const actualizado = await actualizarPerfil({ nombre: values.nombre, telefono: values.telefono });
+      setUsuario(actualizado);
+      updateUser({ name: actualizado.nombre });
+      message.success('Cambios guardados');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Ocurrió un error inesperado');
+    } finally {
+      setGuardandoInfo(false);
+    }
+  }
+
+  async function handleActualizarPassword(values: { actual: string; nueva: string; confirmar: string }) {
+    if (values.nueva !== values.confirmar) {
+      message.error('Las contraseñas no coinciden');
+      return;
+    }
+    setGuardandoPassword(true);
+    try {
+      await cambiarPassword({ actual: values.actual, nueva: values.nueva });
+      message.success('Contraseña actualizada');
+      passwordForm.resetFields();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Ocurrió un error inesperado');
+    } finally {
+      setGuardandoPassword(false);
+    }
+  }
+
+  if (!usuario) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+        <Spin />
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -42,18 +89,14 @@ export function PerfilForm({ usuario }: { usuario: UsuarioCliente }) {
         }}
       >
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Información personal</h2>
-        <Form
-          form={infoForm}
-          layout="vertical"
-          onFinish={handleGuardarInfo}
-          initialValues={{
-            nombre: usuario.nombre,
-            telefono: usuario.telefono,
-            correo: usuario.correo,
-          }}
-        >
+        <Form form={infoForm} layout="vertical" onFinish={handleGuardarInfo}>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <Form.Item name="nombre" label="Nombre completo" style={{ flex: 1, minWidth: 220 }}>
+            <Form.Item
+              name="nombre"
+              label="Nombre completo"
+              style={{ flex: 1, minWidth: 220 }}
+              rules={[{ required: true, message: 'Ingresa tu nombre' }]}
+            >
               <Input placeholder="Nombre completo" />
             </Form.Item>
             <Form.Item name="telefono" label="Teléfono" style={{ flex: 1, minWidth: 220 }}>
@@ -61,9 +104,9 @@ export function PerfilForm({ usuario }: { usuario: UsuarioCliente }) {
             </Form.Item>
           </div>
           <Form.Item name="correo" label="Correo electrónico" style={{ maxWidth: 460 }}>
-            <Input placeholder="Correo electrónico" />
+            <Input placeholder="Correo electrónico" disabled title="El correo no se puede cambiar" />
           </Form.Item>
-          <Button type="primary" htmlType="submit">
+          <Button type="primary" htmlType="submit" loading={guardandoInfo}>
             Guardar cambios
           </Button>
         </Form>
@@ -79,18 +122,33 @@ export function PerfilForm({ usuario }: { usuario: UsuarioCliente }) {
       >
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Cambiar contraseña</h2>
         <Form form={passwordForm} layout="vertical" onFinish={handleActualizarPassword}>
-          <Form.Item name="actual" label="Contraseña actual" style={{ maxWidth: 460 }}>
+          <Form.Item
+            name="actual"
+            label="Contraseña actual"
+            style={{ maxWidth: 460 }}
+            rules={[{ required: true, message: 'Ingresa tu contraseña actual' }]}
+          >
             <Input.Password placeholder="Contraseña actual" />
           </Form.Item>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <Form.Item name="nueva" label="Nueva contraseña" style={{ flex: 1, minWidth: 220 }}>
+            <Form.Item
+              name="nueva"
+              label="Nueva contraseña"
+              style={{ flex: 1, minWidth: 220 }}
+              rules={[{ required: true, min: 8, message: 'Mínimo 8 caracteres' }]}
+            >
               <Input.Password placeholder="Nueva contraseña" />
             </Form.Item>
-            <Form.Item name="confirmar" label="Confirmar contraseña" style={{ flex: 1, minWidth: 220 }}>
+            <Form.Item
+              name="confirmar"
+              label="Confirmar contraseña"
+              style={{ flex: 1, minWidth: 220 }}
+              rules={[{ required: true, message: 'Confirma la nueva contraseña' }]}
+            >
               <Input.Password placeholder="Confirmar contraseña" />
             </Form.Item>
           </div>
-          <Button type="primary" htmlType="submit">
+          <Button type="primary" htmlType="submit" loading={guardandoPassword}>
             Actualizar contraseña
           </Button>
         </Form>
