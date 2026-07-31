@@ -68,7 +68,7 @@ export default function SidebarDashboard() {
       collapsed={collapsed}
       width={260}
       style={{
-        minHeight: '100vh',
+        height: '100%',
         background: 'var(--color-sidebar)',
         borderRight: '1px solid var(--color-sidebar-border)',
         display: 'flex',
@@ -79,6 +79,7 @@ export default function SidebarDashboard() {
       <div
         style={{
           height: 64,
+          flexShrink: 0,
           display: 'flex',
           justifyContent: collapsed ? 'center' : 'flex-end',
           alignItems: 'center',
@@ -103,7 +104,8 @@ export default function SidebarDashboard() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          height: 'calc(100vh - 64px)',
+          flex: 1,
+          minHeight: 0,
           background: 'var(--color-sidebar)',
         }}
       >

@@ -2,7 +2,7 @@
 'use client';
 
 import { AntdRegistry } from '@ant-design/nextjs-registry';
-import { ConfigProvider } from 'antd';
+import { App, ConfigProvider } from 'antd';
 import { colors } from '@/lib/theme';
 
 export function AntdProvider({ children }: { children: React.ReactNode }) {
@@ -30,7 +30,11 @@ export function AntdProvider({ children }: { children: React.ReactNode }) {
           },
         }}
       >
-        {children}
+        {/* App conecta message/notification/Modal al tema de arriba; sin esto,
+            "import { message } from 'antd'" dispara un warning en cada llamada
+            porque corre fuera del árbol de React (ver componentes que usan
+            App.useApp() para obtener `message`). */}
+        <App>{children}</App>
       </ConfigProvider>
     </AntdRegistry>
   );

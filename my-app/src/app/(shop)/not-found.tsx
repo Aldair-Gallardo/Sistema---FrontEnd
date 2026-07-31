@@ -9,7 +9,7 @@ export default function NotFound() {
       <p className="text-gray-500 mt-2">
         Lo sentimos, la página que buscas no existe o fue movida.
       </p>
-      <Link href="/" className="inline-block mt-6 bg-header text-text-light px-6 py-2 rounded">
+      <Link href="/" className="inline-block mt-6 bg-header !text-text-light px-6 py-2 rounded">
         Volver al inicio
       </Link>
     </div>

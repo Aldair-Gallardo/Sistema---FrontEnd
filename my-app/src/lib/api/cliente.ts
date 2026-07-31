@@ -1,20 +1,10 @@
 // src/lib/api/cliente.ts
 // Llamadas del área de cliente contra /auth/me y /account (ver
-// teca-backend/backend/app/routers/auth.py y app/routers/account.py).
+// teca-backend/backend/app/routers/auth.py y app/routers/account.py). a
 
 import { api } from "@/lib/api/client";
 import type { MetodoPago, MetodoPagoInput, TipoMetodoPago, UsuarioCliente } from "@/types/cliente";
-import type { Role } from "@/lib/roles";
-
-const ROL_LABELS: Record<Role, string> = {
-  cliente: "Cliente",
-  admin: "Administrador",
-  editor: "Editor",
-  encargado: "Encargado",
-  vendedor: "Vendedor",
-  soporte: "Soporte",
-  finanzas: "Finanzas",
-};
+import { ROLE_LABELS, toRole } from "@/lib/roles";
 
 function iniciales(nombre: string): string {
   return nombre
@@ -30,7 +20,8 @@ interface PerfilBackend {
   name: string;
   email: string;
   phone?: string;
-  role: Role;
+  /** Rol tal como lo manda el backend (en español); se traduce con toRole(). */
+  role: string;
 }
 
 function mapUsuarioCliente(doc: PerfilBackend): UsuarioCliente {
@@ -38,7 +29,7 @@ function mapUsuarioCliente(doc: PerfilBackend): UsuarioCliente {
     nombre: doc.name,
     correo: doc.email,
     telefono: doc.phone,
-    rol: ROL_LABELS[doc.role] ?? doc.role,
+    rol: ROLE_LABELS[toRole(doc.role)],
     iniciales: iniciales(doc.name),
   };
 }

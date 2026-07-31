@@ -1,11 +1,12 @@
 // src/components/cliente/DireccionesList.tsx
 'use client';
 
-import { Button, Tag, message } from 'antd';
+import { App, Button, Tag } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { Direccion } from '@/types/cliente';
 
 export function DireccionesList({ direcciones }: { direcciones: Direccion[] }) {
+  const { message } = App.useApp();
   // Sin backend conectado todavía: las acciones solo confirman visualmente la intención.
   const handleEditar = (direccion: Direccion) => message.info(`Editar dirección: ${direccion.etiqueta}`);
   const handleEliminar = (direccion: Direccion) => message.warning(`Eliminar dirección: ${direccion.etiqueta}`);
