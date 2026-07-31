@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button, Checkbox, Form, Input, Modal, Select, Spin, Tag, message } from 'antd';
+import { App, Button, Checkbox, Form, Input, Modal, Select, Spin, Tag } from 'antd';
 import { PlusOutlined, CreditCardOutlined } from '@ant-design/icons';
 import {
   actualizarMetodoPago,
@@ -62,6 +62,7 @@ interface FormValues {
 }
 
 export function MetodosPagoList() {
+  const { message, modal } = App.useApp();
   const [form] = Form.useForm<FormValues>();
   const tipoSeleccionado = Form.useWatch('tipo', form);
 
@@ -101,7 +102,7 @@ export function MetodosPagoList() {
   }
 
   function handleEliminar(metodo: MetodoPago) {
-    Modal.confirm({
+    modal.confirm({
       title: 'Eliminar método de pago',
       content: `¿Seguro que quieres eliminar "${metodo.etiqueta}"?`,
       okText: 'Eliminar',
@@ -227,6 +228,11 @@ export function MetodosPagoList() {
       <Modal
         title={editando ? 'Editar método de pago' : 'Agregar método de pago'}
         open={modalAbierto}
+        // El Modal por defecto no monta su contenido hasta abrirse, pero
+        // Form.useWatch('tipo', form) de más abajo necesita el <Form> ya
+        // conectado desde el primer render (si no, antd tira el warning
+        // "Instance created by useForm is not connected to any Form element").
+        forceRender
         onCancel={() => setModalAbierto(false)}
         onOk={() => form.submit()}
         okText="Guardar"

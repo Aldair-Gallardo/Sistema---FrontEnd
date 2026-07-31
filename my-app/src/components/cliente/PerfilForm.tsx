@@ -2,12 +2,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Avatar, Button, Form, Input, Spin, message } from 'antd';
+import { App, Avatar, Button, Form, Input, Spin } from 'antd';
 import { actualizarPerfil, cambiarPassword, obtenerPerfil } from '@/lib/api/cliente';
 import { useAuth } from '@/hooks/useAuth';
 import type { UsuarioCliente } from '@/types/cliente';
 
 export function PerfilForm() {
+  const { message } = App.useApp();
   const [infoForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
   const { updateUser } = useAuth();

@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button, Form, Input, Select, Upload, message } from 'antd';
+import { App, Button, Form, Input, Select, Upload } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import type { Pedido } from '@/types/cliente';
 
@@ -21,6 +21,7 @@ const MOTIVOS = [
 
 export function NuevaDevolucionForm({ pedidos }: { pedidos: Pedido[] }) {
   const router = useRouter();
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const [pedidoId, setPedidoId] = useState<string | undefined>();
 

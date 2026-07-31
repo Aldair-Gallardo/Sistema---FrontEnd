@@ -2,13 +2,14 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Button, message } from 'antd';
+import { App, Button } from 'antd';
 import { LogoutOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 
 export function CerrarSesionConfirm({ cancelarHref = '/' }: { cancelarHref?: string }) {
   const router = useRouter();
   const { logout } = useAuth();
+  const { message } = App.useApp();
 
   const handleCerrarSesion = () => {
     logout();

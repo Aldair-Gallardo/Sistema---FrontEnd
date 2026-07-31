@@ -1,4 +1,4 @@
-// src/components/auth/LoginForm.tsx
+// src/components/auth/LoginForm.tsx a
 "use client";
 
 import Link from "next/link";
@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
-import { Button, Form, Input, message } from "antd";
+import { Button, Form, Input } from "antd";
 import { useAuth } from "@/hooks/useAuth";
 import { isStaffRole } from "@/lib/roles";
 
@@ -15,19 +15,22 @@ interface LoginValues {
   password: string;
 }
 
+const CREDENCIALES_INVALIDAS = "Correo o contraseña incorrectos";
+
 export function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [credencialesInvalidas, setCredencialesInvalidas] = useState(false);
 
   async function handleFinish(values: LoginValues) {
     setLoading(true);
+    setCredencialesInvalidas(false);
     try {
-      const user = await login(values.email, values.password);
+      const user = await login(values.email.trim(), values.password);
       router.push(isStaffRole(user.role) ? "/panel" : "/");
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "Ocurrió un error inesperado");
-    } finally {
+    } catch {
+      setCredencialesInvalidas(true);
       setLoading(false);
     }
   }
@@ -41,20 +44,32 @@ export function LoginForm() {
           label="Correo electrónico"
           name="email"
           rules={[{ required: true, message: "Ingrese su correo electrónico" }]}
+          validateStatus={credencialesInvalidas ? "error" : undefined}
         >
-          <Input placeholder="correo@gmail.com" size="large" type="email" />
+          <Input
+            placeholder="correo@gmail.com"
+            size="large"
+            type="email"
+            onChange={() => setCredencialesInvalidas(false)}
+          />
         </Form.Item>
 
         <Form.Item
           label="Contraseña"
           name="password"
           rules={[{ required: true, message: "Ingrese su contraseña" }]}
+          validateStatus={credencialesInvalidas ? "error" : undefined}
+          help={credencialesInvalidas ? CREDENCIALES_INVALIDAS : undefined}
         >
-          <Input.Password placeholder="Ingrese su contraseña" size="large" />
+          <Input.Password
+            placeholder="Ingrese su contraseña"
+            size="large"
+            onChange={() => setCredencialesInvalidas(false)}
+          />
         </Form.Item>
 
         <div className="text-right mb-5">
-          <Link href="/recuperar" className="text-xs text-[#6F4E37] hover:underline">
+          <Link href="/recuperar" className="text-xs !text-[#6F4E37] hover:underline">
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
@@ -99,7 +114,7 @@ export function LoginForm() {
 
       <p className="text-center mt-8 text-sm">
         ¿No tienes cuenta?{" "}
-        <Link href="/registro" className="text-[#6F4E37] font-bold hover:underline">
+        <Link href="/registro" className="!text-[#6F4E37] font-bold hover:underline">
           Regístrate
         </Link>
       </p>
