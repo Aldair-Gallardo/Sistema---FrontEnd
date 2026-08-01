@@ -19,13 +19,18 @@ export function PerfilForm() {
 
   useEffect(() => {
     obtenerPerfil()
-      .then((data) => {
-        setUsuario(data);
-        infoForm.setFieldsValue({ nombre: data.nombre, telefono: data.telefono, correo: data.correo });
-      })
+      .then(setUsuario)
       .catch((error) => message.error(error instanceof Error ? error.message : 'No se pudo cargar tu perfil'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Recién aquí el <Form> ya está montado (el early return de abajo lo oculta
+  // mientras `usuario` es null), así que es seguro llamar setFieldsValue.
+  useEffect(() => {
+    if (!usuario) return;
+    infoForm.setFieldsValue({ nombre: usuario.nombre, telefono: usuario.telefono, correo: usuario.correo });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usuario]);
 
   async function handleGuardarInfo(values: { nombre: string; telefono?: string }) {
     setGuardandoInfo(true);
