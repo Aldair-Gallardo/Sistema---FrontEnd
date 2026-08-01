@@ -8,7 +8,7 @@
 // los roles en español — ver BackendRole y toRole() más abajo, que traducen
 // eso al identificador en inglés que usa el resto del frontend. Cualquier
 // respuesta de la API que traiga un rol (login, /auth/me, etc.) debe pasar
-// por toRole() antes de guardarse en el estado de la app.
+// por toRole() antes de guardarse en el estado de la app.asasasas
 
 export type Role =
   | "customer"
