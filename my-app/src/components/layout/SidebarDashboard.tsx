@@ -8,9 +8,12 @@ import {
   DashboardOutlined,
   UserOutlined,
   ShoppingOutlined,
+  ShoppingCartOutlined,
+  UndoOutlined,
   DollarOutlined,
   SafetyCertificateOutlined,
   LogoutOutlined,
+  LockOutlined,
 } from '@ant-design/icons';
 import { Button, Layout, Menu } from 'antd';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,45 +24,36 @@ import './SidebarDashboard.css';
 const { Sider } = Layout;
 
 const MENU_ITEMS_BASE = [
-  {
-    key: 'panel',
-    ruta: '/panel',
-    icon: <DashboardOutlined />,
-    label: <Link href="/panel">Panel</Link>,
-  },
-  {
-    key: 'usuarios',
-    ruta: '/usuarios',
-    icon: <UserOutlined />,
-    label: <Link href="/usuarios">Usuarios</Link>,
-  },
-  {
-    key: 'productos',
-    ruta: '/productos',
-    icon: <ShoppingOutlined />,
-    label: <Link href="/productos">Productos</Link>,
-  },
-  {
-    key: 'finanzas',
-    ruta: '/finanzas',
-    icon: <DollarOutlined />,
-    label: <Link href="/finanzas">Finanzas</Link>,
-  },
-  {
-    key: 'permisos',
-    ruta: '/permisos',
-    icon: <SafetyCertificateOutlined />,
-    label: <Link href="/permisos">Permisos</Link>,
-  },
+  { key: 'panel', ruta: '/panel', icon: <DashboardOutlined />, texto: 'Panel' },
+  { key: 'usuarios', ruta: '/usuarios', icon: <UserOutlined />, texto: 'Usuarios' },
+  { key: 'productos', ruta: '/productos', icon: <ShoppingOutlined />, texto: 'Productos' },
+  { key: 'pedidos', ruta: '/pedidos', icon: <ShoppingCartOutlined />, texto: 'Pedidos' },
+  { key: 'devoluciones-admin', ruta: '/devoluciones-admin', icon: <UndoOutlined />, texto: 'Devoluciones' },
+  { key: 'finanzas', ruta: '/finanzas', icon: <DollarOutlined />, texto: 'Finanzas' },
+  { key: 'permisos', ruta: '/permisos', icon: <SafetyCertificateOutlined />, texto: 'Permisos' },
 ];
 
 export default function SidebarDashboard() {
   const [collapsed, setCollapsed] = useState(false);
   const { user } = useAuth();
 
-  const menuItems = MENU_ITEMS_BASE.filter(({ ruta }) => canAccessRoute(ruta, user?.role)).map(
-    ({ key, icon, label }) => ({ key, icon, label })
-  );
+  // El menú siempre se ve completo; las opciones sin acceso para el rol
+  // actual muestran un candado a la derecha, pero siguen siendo clicables —
+  // el proxy (src/proxy.ts) es quien realmente bloquea y manda a
+  // /acceso-denegado si el rol no tiene permiso para esa sección.
+  const menuItems = MENU_ITEMS_BASE.map(({ key, ruta, icon, texto }) => {
+    const tieneAcceso = canAccessRoute(ruta, user?.role);
+    return {
+      key,
+      icon,
+      label: (
+        <Link href={ruta} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>{texto}</span>
+          {!tieneAcceso && <LockOutlined style={{ fontSize: 12, color: '#8c8c8c' }} />}
+        </Link>
+      ),
+    };
+  });
 
   return (
     <Sider

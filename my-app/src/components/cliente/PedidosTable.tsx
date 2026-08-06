@@ -1,16 +1,27 @@
 // src/components/cliente/PedidosTable.tsx
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Table, Button } from 'antd';
+import { App, Button, Spin, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { listarPedidos } from '@/lib/api/pedidos';
 import type { Pedido } from '@/types/cliente';
 import { PedidoEstadoTag } from './EstadoTag';
 
-export function PedidosTable({ pedidos }: { pedidos: Pedido[] }) {
+export function PedidosTable() {
+  const { message } = App.useApp();
+  const [pedidos, setPedidos] = useState<Pedido[] | null>(null);
+
+  useEffect(() => {
+    listarPedidos()
+      .then(setPedidos)
+      .catch((error) => message.error(error instanceof Error ? error.message : 'No se pudieron cargar tus pedidos'));
+  }, [message]);
+
   const columns: ColumnsType<Pedido> = [
     { title: 'Pedido', dataIndex: 'id', key: 'id', render: (id) => <b>{id}</b> },
-    { title: 'Fecha', dataIndex: 'fecha', key: 'fecha' },
+    { title: 'Fecha', dataIndex: 'fecha', key: 'fecha', render: (fecha: string) => new Date(fecha).toLocaleDateString('es-PA') },
     {
       title: 'Estado',
       dataIndex: 'estado',
@@ -44,12 +55,13 @@ export function PedidosTable({ pedidos }: { pedidos: Pedido[] }) {
       }}
     >
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 20 }}>Mis pedidos</h1>
-      <Table
-        rowKey="id"
-        columns={columns}
-        dataSource={pedidos}
-        pagination={{ pageSize: 5 }}
-      />
+      {!pedidos ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+          <Spin />
+        </div>
+      ) : (
+        <Table rowKey="id" columns={columns} dataSource={pedidos} pagination={{ pageSize: 5 }} />
+      )}
     </div>
   );
 }
