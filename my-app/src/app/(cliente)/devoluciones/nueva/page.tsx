@@ -1,7 +1,18 @@
 // src/app/(cliente)/devoluciones/nueva/page.tsx
+import { Suspense } from "react";
+import { Spin } from "antd";
 import { NuevaDevolucionForm } from "@/components/cliente/NuevaDevolucionForm";
-import { mockPedidos } from "@/lib/mock/cliente.mock";
 
 export default function NuevaDevolucionPage() {
-  return <NuevaDevolucionForm pedidos={mockPedidos} />;
+  return (
+    <Suspense
+      fallback={
+        <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
+          <Spin />
+        </div>
+      }
+    >
+      <NuevaDevolucionForm />
+    </Suspense>
+  );
 }

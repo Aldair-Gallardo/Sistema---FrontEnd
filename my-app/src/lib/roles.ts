@@ -76,19 +76,35 @@ export function isStaffRole(role: string | undefined): role is Role {
 }
 
 // Rutas del panel (dashboard) y los roles que pueden entrar a cada una.
+// Calza 1:1 con la tabla de roles definida por el profesor. El backend hoy
+// autoriza algunas de estas rutas de forma más amplia (ver security.py) —
+// esta tabla es la restricción real mientras eso no se ajusta ahí también.
 export const ROUTE_ROLE_MAP: Record<string, Role[]> = {
-  "/usuarios": ["admin"],
-  "/productos": ["admin", "editor", "manager"],
-  "/finanzas": ["admin", "finance"],
-  "/permisos": STAFF_ROLES,
+  "/usuarios": ["admin"], // admin: acceso total
+  // "/productos" (la lista) es lectura: vendedor también entra ahí. Crear y
+  // editar (/productos/nuevo, /productos/{id}) son escritura: vendedor no.
+  // El orden no importa acá — allowedRolesFor() siempre usa el prefijo más
+  // específico que calce, así "/productos/" gana sobre "/productos" cuando
+  // aplica.
+  "/productos": ["admin", "editor", "manager", "sales"],
+  "/productos/": ["admin", "editor", "manager"],
+  "/pedidos": ["admin", "manager", "sales", "support"], // encargado y vendedor gestionan; soporte solo lectura
+  "/devoluciones-admin": ["admin", "manager", "support"], // encargado y soporte; vendedor NO tiene alcance aquí
+  "/finanzas": ["admin", "finance"], // finanzas: solo reportes financieros
+  "/permisos": ["admin"], // no está en el alcance de ningún otro rol de la tabla
+  // "/panel" queda abierto a todo el staff a propósito: es la página de aterrizaje
+  // tras iniciar sesión (ver landingFor más abajo); si se restringiera solo a admin,
+  // el resto de los roles quedaría sin ningún lugar al que el login los mande.
   "/panel": STAFF_ROLES,
 };
 
-/** Devuelve los roles permitidos para la ruta dada, o null si no está mapeada. */
+/** Devuelve los roles permitidos para la ruta dada, o null si no está mapeada.
+ * Cuando varios prefijos calzan (ej. "/productos" y "/productos/"), gana el
+ * más específico (el más largo), no el primero que aparece en el objeto. */
 export function allowedRolesFor(pathname: string): Role[] | null {
-  const match = Object.keys(ROUTE_ROLE_MAP).find((route) =>
-    pathname.startsWith(route)
-  );
+  const match = Object.keys(ROUTE_ROLE_MAP)
+    .filter((route) => pathname.startsWith(route))
+    .sort((a, b) => b.length - a.length)[0];
   return match ? ROUTE_ROLE_MAP[match] : null;
 }
 
