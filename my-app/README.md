@@ -143,6 +143,51 @@ Abrí [http://localhost:3000](http://localhost:3000) en el navegador. La página
 
 ---
 
+## Si `npm run dev` congela la PC o va muy lento
+
+Next.js 16 usa **Turbopack** por defecto para `next dev` (antes había que activarlo a mano). En Windows, Turbopack puede volverse muy pesado — sobre todo si el antivirus escanea cada archivo que genera, o si la laptop tiene poca RAM libre — al punto de congelar la PC entera y obligar a reiniciar.
+
+Ya cambiamos el script `dev` del `package.json` para usar Webpack en vez de Turbopack, así que si clonaste el repo después de este cambio no deberías tener el problema. Si a alguien le sigue pasando (o clonó antes del cambio), seguir estos pasos en orden dentro de `Sistema---FrontEnd/my-app`:
+
+1. **Traer el cambio y limpiar la caché de compilación**
+   ```bash
+   git pull
+   ```
+   Windows (PowerShell): `Remove-Item -Recurse -Force .next`
+   Git Bash / Linux: `rm -rf .next`
+
+2. **Reinstalar los paquetes de forma exacta** (esto también arregla el problema de tener `node_modules` desincronizado con el `package-lock.json` del equipo)
+   Windows (PowerShell): `Remove-Item -Recurse -Force node_modules`
+   Git Bash / Linux: `rm -rf node_modules`
+   ```bash
+   npm ci
+   ```
+   `npm ci` falla con un error claro si tu `package.json` local no coincide con el lockfile del repo, en vez de instalar algo distinto en silencio — si a alguien le tira error acá, es señal de que ese era justo su problema.
+
+3. **Revisar la versión de Node** (tiene que ser `>= 20.9`, ver [Requisitos previos](#requisitos-previos))
+   ```bash
+   node -v
+   ```
+
+4. **Revisar cuánta RAM libre tiene la máquina** al momento de arrancar (PowerShell):
+   ```powershell
+   Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize, FreePhysicalMemory | ForEach-Object { "Total: {0:N2} GB, Libre: {1:N2} GB" -f ($_.TotalVisibleMemorySize/1MB), ($_.FreePhysicalMemory/1MB) }
+   ```
+   Si hay menos de ~4GB libres, cerrá programas pesados (Chrome con muchas pestañas, etc.) antes de levantar el proyecto.
+
+5. **Excluir la carpeta del proyecto en Windows Defender** — abrí PowerShell **como Administrador** y corré (ajustando la ruta a donde tengas el proyecto vos):
+   ```powershell
+   Add-MpPreference -ExclusionPath "C:\ruta\a\tu\Sistema---FrontEnd\my-app"
+   ```
+
+6. **Levantar el proyecto**
+   ```bash
+   npm run dev
+   ```
+   En la consola debe aparecer `▲ Next.js 16.2.6 (webpack)` — si en vez de eso ves algo con "Turbopack", el script no se actualizó bien (repetí el paso 1).
+
+---
+
 ## Solución de problemas comunes
 
 - **"No se pudo conectar con el servidor" / errores raros al iniciar sesión**
@@ -159,3 +204,6 @@ Abrí [http://localhost:3000](http://localhost:3000) en el navegador. La página
 
 - **Windows: `npm ci` o `npm run dev` fallan por permisos/PATH**
   Abrí una terminal nueva después de instalar Node/Git para que tome el PATH actualizado, y evitá correr la terminal como administrador salvo que sea necesario.
+
+- **La PC se congela o va muy lenta al correr `npm run dev`**
+  Ver la sección [Si `npm run dev` congela la PC o va muy lento](#si-npm-run-dev-congela-la-pc-o-va-muy-lento) más arriba.
