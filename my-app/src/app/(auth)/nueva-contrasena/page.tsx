@@ -26,7 +26,6 @@ export default function ResetPassword() {
 
       {/* Lado derecho */}
       <section className="w-1/2 flex items-center justify-center">
-
         <div className="w-96">
 
           <h1 className="text-4xl font-bold font-serif mb-10">
@@ -71,7 +70,7 @@ export default function ResetPassword() {
 
           <p className="text-center mt-6">
             <Link
-              href="/auth/login"
+              href="/login"
               className="text-[#6F4E37] hover:underline"
             >
               Volver al inicio de sesión
@@ -79,9 +78,10 @@ export default function ResetPassword() {
           </p>
 
         </div>
-
       </section>
 
     </main>
   );
 }
+
+
