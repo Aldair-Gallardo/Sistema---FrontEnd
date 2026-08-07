@@ -1,7 +1,9 @@
 // src/hooks/AuthContext.tsx
 "use client";
 
-import { createContext, useSyncExternalStore } from "react";
+import { createContext, useEffect, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import { App } from "antd";
 import { loginRequest } from "@/lib/api/auth";
 import type { User } from "@/types/user";
 
@@ -26,6 +28,11 @@ function setCookie(name: string, value: string, maxAgeSeconds: number) {
 function deleteCookie(name: string) {
   document.cookie = `${name}=; path=/; max-age=0; samesite=lax`;
 }
+
+// Cierra la sesión sola si no hay actividad del usuario (clicks, teclado,
+// scroll) durante este tiempo, aunque el token siga siendo válido.
+const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"] as const;
 
 // El usuario logueado vive en localStorage, una fuente externa a React. Se expone
 // a través de useSyncExternalStore (en vez de useState + useEffect) para que la
@@ -71,6 +78,32 @@ function setStoredUser(user: User | null) {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const user = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const router = useRouter();
+  const { message } = App.useApp();
+
+  useEffect(() => {
+    if (!user) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+
+    function resetTimer() {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        logout();
+        message.info("Tu sesión se cerró por inactividad");
+        router.push("/login");
+      }, IDLE_TIMEOUT_MS);
+    }
+
+    resetTimer();
+    ACTIVITY_EVENTS.forEach((evento) => window.addEventListener(evento, resetTimer));
+
+    return () => {
+      clearTimeout(timer);
+      ACTIVITY_EVENTS.forEach((evento) => window.removeEventListener(evento, resetTimer));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- logout no depende de nada por render, solo nos interesa reiniciar el timer cuando cambia el usuario
+  }, [user]);
 
   async function login(email: string, password: string): Promise<User> {
     const data = await loginRequest(email, password);

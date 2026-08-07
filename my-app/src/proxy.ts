@@ -18,7 +18,15 @@ const CLIENT_ROUTES = [
   "/devoluciones",
 ];
 
-const DASHBOARD_ROUTES = ["/panel", "/usuarios", "/productos", "/finanzas", "/permisos"];
+const DASHBOARD_ROUTES = [
+  "/panel",
+  "/usuarios",
+  "/productos",
+  "/pedidos",
+  "/devoluciones-admin",
+  "/finanzas",
+  "/permisos",
+];
 
 const AUTH_ROUTES = ["/login", "/registro"];
 
@@ -52,9 +60,9 @@ export function proxy(request: NextRequest) {
     }
 
     if (!canAccessRoute(pathname, role)) {
-      // Rol autenticado pero sin permiso para esta sección: lo mandamos a su
-      // landing (el panel si es staff, la tienda si no lo es).
-      return NextResponse.redirect(new URL(landingFor(role), request.url));
+      // Rol autenticado pero sin permiso para esta sección: mostramos un
+      // mensaje explícito en vez de redirigirlo en silencio.
+      return NextResponse.redirect(new URL("/acceso-denegado", request.url));
     }
   }
 
@@ -79,6 +87,8 @@ export const config = {
     "/panel/:path*",
     "/usuarios/:path*",
     "/productos/:path*",
+    "/pedidos/:path*",
+    "/devoluciones-admin/:path*",
     "/finanzas/:path*",
     "/permisos/:path*",
 

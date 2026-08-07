@@ -37,9 +37,8 @@ export function Header() {
   };
 
   return (
-    <header className="w-full bg-header px-8 py-4 flex items-center justify-between"
-    >
-      <Link href="/" className="text-text-light text-2xl font-bold no-underline">
+    <header className="w-full bg-header px-8 py-4 flex items-center justify-between sticky top-0 z-50">
+      <Link href="/" className="!text-text-light text-2xl font-bold no-underline">
         TECA
       </Link>
 
@@ -67,7 +66,7 @@ export function Header() {
         {esUsuarioInterno && (
           <Link
             href="/panel"
-            className="text-text-light text-sm font-semibold no-underline"
+            className="!text-text-light text-sm font-semibold no-underline"
           >
             Administrador
           </Link>
@@ -75,22 +74,25 @@ export function Header() {
 
         {hayUsuarioLogueado ? (
           <Link href="/mi-cuenta">
-            <UserOutlined className="text-text-light text-xl cursor-pointer" />
+            <UserOutlined className="!text-text-light text-xl cursor-pointer" />
           </Link>
         ) : (
           <Link
             href="/login"
-            className="text-text-light text-sm font-semibold no-underline"
+            className="!text-text-light text-sm font-semibold no-underline"
           >
             Iniciar sesión
           </Link>
         )}
 
         <Link href="/carrito">
+  
         <Badge count={totalItems} size="small" offset={[-2, 2]}>
           <ShoppingCartOutlined className="text-text-light text-xl cursor-pointer" />
-          </Badge>
-        </Link>
+          
+          <ShoppingCartOutlined className="!text-text-light text-xl cursor-pointer" />
+        </Badge>
+         </Link>
       </div>
     </header>
   );

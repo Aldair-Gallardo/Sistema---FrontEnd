@@ -12,24 +12,43 @@ export function getToken(): string | null {
   return localStorage.getItem("token");
 }
 
+async function parseJson(respuesta: Response) {
+  try {
+    return await respuesta.json();
+  } catch {
+    throw new Error("El servidor respondió con un formato inesperado");
+  }
+}
+
 export async function api(endpoint: string, options: RequestInit = {}) {
+  if (!API_URL) {
+    throw new Error(
+      "Falta configurar NEXT_PUBLIC_API_URL. Copia .env.example a .env.local con la URL del backend."
+    );
+  }
+
   const token = getToken();
 
-  const respuesta = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
+  let respuesta: Response;
+  try {
+    respuesta = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    });
+  } catch {
+    throw new Error(`No se pudo conectar con el servidor (${API_URL}). ¿Está corriendo el backend?`);
+  }
 
   if (respuesta.status === 204) return null;
 
-  const datos = await respuesta.json();
+  const datos = await parseJson(respuesta);
 
   if (!respuesta.ok) {
-    throw new Error(datos.detail || "Ocurrió un error inesperado");
+    throw new Error(datos?.detail || "Ocurrió un error inesperado");
   }
 
   return datos;

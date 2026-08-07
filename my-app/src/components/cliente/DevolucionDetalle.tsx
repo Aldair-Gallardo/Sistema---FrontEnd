@@ -1,15 +1,58 @@
 // src/components/cliente/DevolucionDetalle.tsx
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button, Empty, Steps } from 'antd';
-import type { Devolucion } from '@/types/cliente';
+import { App, Button, Empty, Spin, Steps } from 'antd';
+import { obtenerDevolucionConDetalle } from '@/lib/api/devoluciones';
+import type { Devolucion, EstadoDevolucion } from '@/types/cliente';
 import { DevolucionEstadoTag } from './EstadoTag';
 
-export function DevolucionDetalle({ devolucion }: { devolucion?: Devolucion }) {
+const PASOS = ['Solicitud recibida', 'En revisión', 'Resolución'];
+
+/** El backend solo guarda el estado actual (sin historial de fechas para devoluciones), así que el paso
+ * actual se calcula a partir de "estado" en vez de una línea de tiempo real. */
+function pasoActual(estado: EstadoDevolucion): number {
+  return estado === 'en_revision' ? 1 : 2;
+}
+
+const MENSAJE_ESTADO: Partial<Record<EstadoDevolucion, string>> = {
+  en_revision: 'Tu solicitud está siendo revisada por nuestro equipo.',
+  aprobado: 'Tu solicitud fue aprobada. Te contactaremos para coordinar la recolección/cambio del producto.',
+  completado: 'El cambio o devolución fue procesado.',
+};
+
+const cardStyle: React.CSSProperties = {
+  background: '#fff',
+  borderRadius: 12,
+  padding: 24,
+  border: '1px solid var(--color-sidebar-border)',
+};
+
+export function DevolucionDetalle({ numero }: { numero: string }) {
+  const { message } = App.useApp();
+  const [devolucion, setDevolucion] = useState<Devolucion | null | undefined>(null);
+
+  useEffect(() => {
+    obtenerDevolucionConDetalle(numero)
+      .then((resultado) => setDevolucion(resultado ?? undefined))
+      .catch((error) => {
+        message.error(error instanceof Error ? error.message : 'No se pudo cargar esta devolución');
+        setDevolucion(undefined);
+      });
+  }, [numero, message]);
+
+  if (devolucion === null) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+        <Spin />
+      </div>
+    );
+  }
+
   if (!devolucion) {
     return (
-      <div style={{ background: '#fff', borderRadius: 12, padding: 48, border: '1px solid var(--color-sidebar-border)' }}>
+      <div style={{ ...cardStyle, padding: 48 }}>
         <Empty description="No encontramos esta devolución" />
         <div style={{ textAlign: 'center', marginTop: 16 }}>
           <Link href="/devoluciones">
@@ -20,7 +63,7 @@ export function DevolucionDetalle({ devolucion }: { devolucion?: Devolucion }) {
     );
   }
 
-  const pasoActualIndex = devolucion.pasos.findIndex((paso) => !paso.completado);
+  const actual = pasoActual(devolucion.estado);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -31,41 +74,27 @@ export function DevolucionDetalle({ devolucion }: { devolucion?: Devolucion }) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{devolucion.id}</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{devolucion.numero}</h1>
         <DevolucionEstadoTag estado={devolucion.estado} />
       </div>
       <p style={{ color: '#666', margin: '-12px 0 0' }}>
-        Solicitada el {devolucion.fecha} -- Pedido {devolucion.pedidoId}
+        Solicitada el {new Date(devolucion.fecha).toLocaleDateString('es-PA')} -- Pedido {devolucion.pedidoId}
       </p>
 
-      {devolucion.estado !== 'Rechazado' && (
-        <div
-          style={{
-            background: '#fff',
-            borderRadius: 12,
-            padding: 24,
-            border: '1px solid var(--color-sidebar-border)',
-          }}
-        >
-          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20, textAlign: 'center' }}>
-            Proceso de la solicitud
-          </h2>
+      {devolucion.estado !== 'rechazado' && (
+        <div style={cardStyle}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20, textAlign: 'center' }}>Proceso de la solicitud</h2>
           <Steps
-            current={pasoActualIndex === -1 ? devolucion.pasos.length - 1 : pasoActualIndex}
-            items={devolucion.pasos.map((paso) => ({
-              title: paso.label,
-              status: paso.completado ? 'finish' : undefined,
-            }))}
+            current={actual}
+            items={PASOS.map((titulo, indice) => ({ title: titulo, status: indice <= actual ? 'finish' : undefined }))}
           />
         </div>
       )}
 
       <div
         style={{
-          background: '#fff',
-          borderRadius: 12,
+          ...cardStyle,
           padding: 20,
-          border: '1px solid var(--color-sidebar-border)',
           display: 'flex',
           gap: 16,
           alignItems: 'flex-start',
@@ -90,54 +119,33 @@ export function DevolucionDetalle({ devolucion }: { devolucion?: Devolucion }) {
         <div style={{ flex: 1 }}>
           <p style={{ fontWeight: 700, margin: 0 }}>{devolucion.producto}</p>
           {devolucion.material && <p style={{ color: '#666', fontSize: 13, margin: 0 }}>Material: {devolucion.material}</p>}
-          <p style={{ color: '#666', fontSize: 13, margin: 0 }}>Cantidad: {devolucion.cantidad}</p>
+          {devolucion.cantidad !== undefined && (
+            <p style={{ color: '#666', fontSize: 13, margin: 0 }}>Cantidad: {devolucion.cantidad}</p>
+          )}
           <p style={{ color: '#8c8c8c', fontSize: 12, margin: '8px 0 0' }}>Motivo</p>
-          <p style={{ margin: 0 }}>{devolucion.descripcion ?? devolucion.motivo}</p>
+          <p style={{ margin: 0 }}>{devolucion.motivo}</p>
         </div>
-        <p style={{ color: '#666', fontSize: 13, margin: 0, whiteSpace: 'nowrap' }}>{devolucion.motivo}</p>
       </div>
 
-      {devolucion.estado === 'Rechazado' && devolucion.motivoRechazo && (
-        <>
-          <div
-            style={{
-              background: '#FFF1F0',
-              border: '1px solid #FFA39E',
-              borderRadius: 12,
-              padding: 20,
-            }}
-          >
-            <p style={{ fontWeight: 700, color: '#CF1322', margin: '0 0 8px' }}>Motivo del rechazo</p>
-            <p style={{ color: '#5c2223', margin: 0 }}>{devolucion.motivoRechazo}</p>
-          </div>
-          <div
-            style={{
-              background: '#E6F7FF',
-              border: '1px solid #91D5FF',
-              borderRadius: 12,
-              padding: 16,
-              textAlign: 'center',
-              color: '#096DD9',
-              cursor: 'pointer',
-            }}
-          >
-            ¿No estás de acuerdo? Puedes contactar a soporte para revisar el caso
-          </div>
-        </>
-      )}
-
-      {devolucion.estado !== 'Rechazado' && devolucion.mensajeEstado && (
+      {devolucion.estado === 'rechazado' ? (
         <div
           style={{
             background: '#E6F7FF',
             border: '1px solid #91D5FF',
             borderRadius: 12,
             padding: 16,
+            textAlign: 'center',
             color: '#096DD9',
           }}
         >
-          {devolucion.mensajeEstado}
+          ¿No estás de acuerdo? Puedes contactar a soporte para revisar el caso
         </div>
+      ) : (
+        MENSAJE_ESTADO[devolucion.estado] && (
+          <div style={{ background: '#E6F7FF', border: '1px solid #91D5FF', borderRadius: 12, padding: 16, color: '#096DD9' }}>
+            {MENSAJE_ESTADO[devolucion.estado]}
+          </div>
+        )
       )}
     </div>
   );
