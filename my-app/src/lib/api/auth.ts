@@ -19,3 +19,11 @@ export async function loginRequest(email: string, password: string): Promise<Log
   });
   return { ...data, user: { ...data.user, role: toRole(data.user.role) } };
 }
+
+/** POST /auth/change-password. También es el endpoint que limpia must_change_password tras la contraseña temporal. */
+export async function cambiarPassword(datos: { actual: string; nueva: string }): Promise<void> {
+  await api("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({ current_password: datos.actual, new_password: datos.nueva }),
+  });
+}

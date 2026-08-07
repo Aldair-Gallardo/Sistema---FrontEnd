@@ -28,7 +28,11 @@ export function LoginForm() {
     setCredencialesInvalidas(false);
     try {
       const user = await login(values.email.trim(), values.password);
-      router.push(isStaffRole(user.role) ? "/panel" : "/");
+      if (user.mustChangePassword) {
+        router.push("/cambiar-password");
+      } else {
+        router.push(isStaffRole(user.role) ? "/panel" : "/");
+      }
     } catch {
       setCredencialesInvalidas(true);
       setLoading(false);

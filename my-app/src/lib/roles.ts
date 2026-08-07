@@ -60,6 +60,21 @@ export function toRole(backendRole: string): Role {
   return role;
 }
 
+const ROLE_TO_BACKEND_ROLE: Record<Role, BackendRole> = {
+  customer: "cliente",
+  admin: "admin",
+  editor: "editor",
+  manager: "encargado",
+  sales: "vendedor",
+  support: "soporte",
+  finance: "finanzas",
+};
+
+/** Traduce el identificador de rol del frontend (inglés) al que espera el backend (español). */
+export function fromRole(role: Role): BackendRole {
+  return ROLE_TO_BACKEND_ROLE[role];
+}
+
 /** Etiquetas en español para mostrar el rol en la UI (Header, tabla de usuarios, etc). */
 export const ROLE_LABELS: Record<Role, string> = {
   customer: "Cliente",
@@ -92,10 +107,14 @@ export const ROUTE_ROLE_MAP: Record<string, Role[]> = {
   "/devoluciones-admin": ["admin", "manager", "support"], // encargado y soporte; vendedor NO tiene alcance aquí
   "/finanzas": ["admin", "finance"], // finanzas: solo reportes financieros
   "/permisos": ["admin"], // no está en el alcance de ningún otro rol de la tabla
+  "/auditoria": ["admin"], // igual que "auditoria" en ROLE_PERMISSIONS del backend: solo admin
   // "/panel" queda abierto a todo el staff a propósito: es la página de aterrizaje
   // tras iniciar sesión (ver landingFor más abajo); si se restringiera solo a admin,
   // el resto de los roles quedaría sin ningún lugar al que el login los mande.
   "/panel": STAFF_ROLES,
+  // Cambio de contraseña obligatorio (primer ingreso con contraseña temporal):
+  // cualquier rol interno puede caer acá, sin importar a qué más tenga acceso.
+  "/cambiar-password": STAFF_ROLES,
 };
 
 /** Devuelve los roles permitidos para la ruta dada, o null si no está mapeada.

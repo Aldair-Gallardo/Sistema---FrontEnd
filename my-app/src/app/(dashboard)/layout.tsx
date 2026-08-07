@@ -1,6 +1,7 @@
 // src/app/(dashboard)/layout.tsx
 import { Header } from "@/components/layout/Header";
 import SidebarDashboard from "@/components/layout/SidebarDashboard";
+import { MustChangePasswordGuard } from "@/components/auth/MustChangePasswordGuard";
 
 export default function DashboardLayout({
   children,
@@ -9,6 +10,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <MustChangePasswordGuard />
       <Header />
 
       {/* minHeight: 0 evita que este row se estire más allá de la altura
