@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import type { Producto } from "./productos";
+import { useCart } from "@/context/CartContext";
 
 type ProductoCardProps = {
   producto: Producto;
@@ -13,6 +14,7 @@ export default function ProductoCard({
   producto,
 }: ProductoCardProps) {
   const [cantidad, setCantidad] = useState<number>(1);
+  const { agregarItem } = useCart();
 
   const disminuirCantidad = () => {
     setCantidad((cantidadActual) =>
@@ -25,12 +27,18 @@ export default function ProductoCard({
   };
 
   const agregarAlCarrito = () => {
-    window.alert(
-      `${cantidad} unidad(es) de ${producto.nombre} agregada(s) al carrito.`,
-    );
+    agregarItem({
+      id: producto.id,
+      nombre: producto.nombre,
+      precio: producto.precio,
+      cantidad: cantidad,
+      imagen: producto.imagen,
+    });
   };
 
-  return (
+  
+    return(
+
     <article className="group overflow-hidden rounded-xl border border-[#e7ddd2] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
       {/* Imagen del producto */}
       <Link
