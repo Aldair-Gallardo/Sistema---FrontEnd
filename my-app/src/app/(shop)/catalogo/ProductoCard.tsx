@@ -1,10 +1,15 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import type { Producto } from "./productos";
 import { useCart } from "@/context/CartContext";
+import { urlImagen } from "@/lib/api/productos";
+import {
+  CATEGORIA_LABELS,
+  MATERIAL_LABELS,
+  type Producto,
+} from "@/types/producto";
 
 type ProductoCardProps = {
   producto: Producto;
@@ -13,8 +18,14 @@ type ProductoCardProps = {
 export default function ProductoCard({
   producto,
 }: ProductoCardProps) {
-  const [cantidad, setCantidad] = useState<number>(1);
+  const [cantidad, setCantidad] = useState(1);
   const { agregarItem } = useCart();
+
+  const imagenPrincipal = producto.imagenes[0]
+    ? urlImagen(producto.imagenes[0])
+    : "";
+
+  const sinStock = producto.stock <= 0;
 
   const disminuirCantidad = () => {
     setCantidad((cantidadActual) =>
@@ -23,16 +34,22 @@ export default function ProductoCard({
   };
 
   const aumentarCantidad = () => {
-    setCantidad((cantidadActual) => cantidadActual + 1);
+    setCantidad((cantidadActual) =>
+      Math.min(producto.stock, cantidadActual + 1),
+    );
   };
 
   const agregarAlCarrito = () => {
+    if (sinStock) {
+      return;
+    }
+
     agregarItem({
       id: producto.id,
       nombre: producto.nombre,
       precio: producto.precio,
       cantidad: cantidad,
-      imagen: producto.imagen,
+      imagen: imagenPrincipal,
     });
   };
 
@@ -40,24 +57,28 @@ export default function ProductoCard({
     return(
 
     <article className="group overflow-hidden rounded-xl border border-[#e7ddd2] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
-      {/* Imagen del producto */}
+      {/* Imagen */}
       <Link
         href={`/producto/${producto.id}`}
-        className="relative block h-48 overflow-hidden bg-[#f2eee8]"
+        className="relative flex h-48 items-center justify-center overflow-hidden bg-[#f2eee8]"
       >
-        <Image
-          src={producto.imagen}
-          alt={producto.nombre}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          className="object-contain p-5 transition duration-300 group-hover:scale-105"
-        />
+        {imagenPrincipal ? (
+          <img
+            src={imagenPrincipal}
+            alt={producto.nombre}
+            className="h-full w-full object-contain p-5 transition duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <span className="text-sm text-[#756b63]">
+            Producto sin imagen
+          </span>
+        )}
       </Link>
 
       {/* Información */}
       <div className="p-4">
         <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#966342]">
-          {producto.categoria}
+          {CATEGORIA_LABELS[producto.categoria]}
         </p>
 
         <Link href={`/producto/${producto.id}`}>
@@ -71,10 +92,14 @@ export default function ProductoCard({
         </p>
 
         <p className="mt-1 text-sm text-[#756b63]">
-          Material: {producto.material}
+          Material: {MATERIAL_LABELS[producto.material]}
         </p>
 
-        {/* Selector de cantidad */}
+        <p className="mt-1 text-xs text-[#887b72]">
+          Disponibles: {producto.stock}
+        </p>
+
+        {/* Cantidad */}
         <div className="mt-4 flex items-center justify-between">
           <span className="text-sm font-medium text-[#51483f]">
             Cantidad
@@ -84,20 +109,22 @@ export default function ProductoCard({
             <button
               type="button"
               onClick={disminuirCantidad}
-              className="h-8 w-8 bg-[#f7f2e9] text-lg transition hover:bg-[#eaddce]"
+              disabled={sinStock || cantidad <= 1}
+              className="h-8 w-8 bg-[#f7f2e9] text-lg transition hover:bg-[#eaddce] disabled:cursor-not-allowed disabled:opacity-40"
               aria-label={`Disminuir cantidad de ${producto.nombre}`}
             >
               −
             </button>
 
             <span className="flex h-8 min-w-9 items-center justify-center border-x border-[#d8cec4] text-sm">
-              {cantidad}
+              {sinStock ? 0 : cantidad}
             </span>
 
             <button
               type="button"
               onClick={aumentarCantidad}
-              className="h-8 w-8 bg-[#f7f2e9] text-lg transition hover:bg-[#eaddce]"
+              disabled={sinStock || cantidad >= producto.stock}
+              className="h-8 w-8 bg-[#f7f2e9] text-lg transition hover:bg-[#eaddce] disabled:cursor-not-allowed disabled:opacity-40"
               aria-label={`Aumentar cantidad de ${producto.nombre}`}
             >
               +
@@ -117,9 +144,10 @@ export default function ProductoCard({
           <button
             type="button"
             onClick={agregarAlCarrito}
-            className="min-h-10 rounded-md bg-[#795538] px-3 text-xs font-semibold text-white transition hover:bg-[#60412d]"
+            disabled={sinStock}
+            className="min-h-10 rounded-md bg-[#795538] px-3 text-xs font-semibold text-white transition hover:bg-[#60412d] disabled:cursor-not-allowed disabled:bg-[#a99a8e]"
           >
-            Agregar
+            {sinStock ? "Sin stock" : "Agregar"}
           </button>
         </div>
       </div>

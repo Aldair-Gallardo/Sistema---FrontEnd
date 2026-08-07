@@ -1,11 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ProductoCard from "./ProductoCard";
+import { listarProductosPublicos } from "@/lib/api/productos";
 import {
-  productos,
+  CATEGORIA_LABELS,
+  MATERIAL_LABELS,
+  type Categoria,
+  type MaterialProducto,
   type Producto,
-} from "./productos";
+} from "@/types/producto";
 
 type TipoOrden =
   | "recomendados"
@@ -13,58 +17,107 @@ type TipoOrden =
   | "precio-mayor"
   | "nombre";
 
-const categorias: string[] = Array.from(
-  new Set(
-    productos.map((producto) => producto.categoria),
-  ),
-);
-
-const materiales: string[] = Array.from(
-  new Set(
-    productos.map((producto) => producto.material),
-  ),
-);
-
 export default function CatalogoCliente() {
-  const [precioMaximo, setPrecioMaximo] =
-    useState<number>(500);
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [intento, setIntento] = useState(0);
+
+  const [precioMaximo, setPrecioMaximo] = useState(500);
 
   const [
     categoriasSeleccionadas,
     setCategoriasSeleccionadas,
-  ] = useState<string[]>([]);
+  ] = useState<Categoria[]>([]);
 
   const [
     materialesSeleccionados,
     setMaterialesSeleccionados,
-  ] = useState<string[]>([]);
+  ] = useState<MaterialProducto[]>([]);
 
   const [orden, setOrden] =
     useState<TipoOrden>("recomendados");
 
-  const alternarCategoria = (categoria: string) => {
-    setCategoriasSeleccionadas((categoriasActuales) => {
-      if (categoriasActuales.includes(categoria)) {
-        return categoriasActuales.filter(
+  useEffect(() => {
+    let componenteActivo = true;
+
+    const cargarProductos = async () => {
+      try {
+        setCargando(true);
+        setError(null);
+
+        const resultado = await listarProductosPublicos({
+          pagina: 1,
+          productosPorPagina: 50,
+          orden: "relevance",
+        });
+
+        if (componenteActivo) {
+          setProductos(resultado.productos);
+        }
+      } catch (errorDesconocido) {
+        if (componenteActivo) {
+          setError(
+            errorDesconocido instanceof Error
+              ? errorDesconocido.message
+              : "No se pudieron cargar los productos.",
+          );
+        }
+      } finally {
+        if (componenteActivo) {
+          setCargando(false);
+        }
+      }
+    };
+
+    cargarProductos();
+
+    return () => {
+      componenteActivo = false;
+    };
+  }, [intento]);
+
+  const categorias = useMemo<Categoria[]>(() => {
+    return Array.from(
+      new Set(
+        productos.map((producto) => producto.categoria),
+      ),
+    );
+  }, [productos]);
+
+  const materiales = useMemo<MaterialProducto[]>(() => {
+    return Array.from(
+      new Set(
+        productos.map((producto) => producto.material),
+      ),
+    );
+  }, [productos]);
+
+  const alternarCategoria = (categoria: Categoria) => {
+    setCategoriasSeleccionadas((actuales) => {
+      if (actuales.includes(categoria)) {
+        return actuales.filter(
           (categoriaActual) =>
             categoriaActual !== categoria,
         );
       }
 
-      return [...categoriasActuales, categoria];
+      return [...actuales, categoria];
     });
   };
 
-  const alternarMaterial = (material: string) => {
-    setMaterialesSeleccionados((materialesActuales) => {
-      if (materialesActuales.includes(material)) {
-        return materialesActuales.filter(
+  const alternarMaterial = (
+    material: MaterialProducto,
+  ) => {
+    setMaterialesSeleccionados((actuales) => {
+      if (actuales.includes(material)) {
+        return actuales.filter(
           (materialActual) =>
             materialActual !== material,
         );
       }
 
-      return [...materialesActuales, material];
+      return [...actuales, material];
     });
   };
 
@@ -101,11 +154,52 @@ export default function CatalogoCliente() {
 
     return ordenarProductos(resultado, orden);
   }, [
+    productos,
     precioMaximo,
     categoriasSeleccionadas,
     materialesSeleccionados,
     orden,
   ]);
+
+  if (cargando) {
+    return (
+      <section className="mx-auto w-[calc(100%-32px)] max-w-7xl pb-20 md:w-[calc(100%-48px)]">
+        <div className="rounded-xl border border-[#e7ddd2] bg-white px-6 py-16 text-center shadow-sm">
+          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-[#e2d5c8] border-t-[#795538]" />
+
+          <p className="mt-4 text-sm text-[#756b63]">
+            Cargando productos...
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="mx-auto w-[calc(100%-32px)] max-w-7xl pb-20 md:w-[calc(100%-48px)]">
+        <div className="rounded-xl border border-red-200 bg-white px-6 py-16 text-center shadow-sm">
+          <h2 className="text-xl font-semibold text-[#302821]">
+            No se pudo cargar el catálogo
+          </h2>
+
+          <p className="mt-2 text-sm text-red-600">
+            {error}
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              setIntento((intentoActual) => intentoActual + 1)
+            }
+            className="mt-5 rounded-md bg-[#795538] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#60412d]"
+          >
+            Intentar nuevamente
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto w-[calc(100%-32px)] max-w-7xl pb-20 md:w-[calc(100%-48px)]">
@@ -178,7 +272,9 @@ export default function CatalogoCliente() {
                     className="h-4 w-4 accent-[#795538]"
                   />
 
-                  <span>{categoria}</span>
+                  <span>
+                    {CATEGORIA_LABELS[categoria]}
+                  </span>
                 </label>
               ))}
             </div>
@@ -207,7 +303,9 @@ export default function CatalogoCliente() {
                     className="h-4 w-4 accent-[#795538]"
                   />
 
-                  <span>{material}</span>
+                  <span>
+                    {MATERIAL_LABELS[material]}
+                  </span>
                 </label>
               ))}
             </div>
@@ -224,7 +322,6 @@ export default function CatalogoCliente() {
 
         {/* Área de productos */}
         <div>
-          {/* Barra superior */}
           <div className="mb-6 flex flex-col gap-4 rounded-xl border border-[#e7ddd2] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-[#51483f]">
               Mostrando{" "}
@@ -275,7 +372,6 @@ export default function CatalogoCliente() {
             </div>
           </div>
 
-          {/* Productos */}
           {productosFiltrados.length > 0 ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
               {productosFiltrados.map((producto) => (

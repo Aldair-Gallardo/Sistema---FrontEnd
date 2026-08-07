@@ -55,6 +55,74 @@ function mapProductoInput(input: ProductoInput | Partial<ProductoInput>) {
   };
 }
 
+// ================================
+// Catálogo público
+// ================================
+
+export type OrdenCatalogo =
+  | "relevance"
+  | "price_asc"
+  | "price_desc"
+  | "newest";
+
+export interface ListarCatalogoParams {
+  search?: string;
+  categorias?: Categoria[];
+  materiales?: MaterialProducto[];
+  precioMinimo?: number;
+  precioMaximo?: number;
+  orden?: OrdenCatalogo;
+  pagina?: number;
+  productosPorPagina?: number;
+}
+
+export async function listarProductosPublicos(
+  params: ListarCatalogoParams = {}
+): Promise<{
+  productos: Producto[];
+  total: number;
+  totalPaginas: number;
+}> {
+  const query = new URLSearchParams();
+
+  if (params.search) {
+    query.set("search", params.search);
+  }
+
+  if (params.categorias?.length) {
+    query.set("category", params.categorias.join(","));
+  }
+
+  if (params.materiales?.length) {
+    query.set("material", params.materiales.join(","));
+  }
+
+  if (params.precioMinimo !== undefined) {
+    query.set("min_price", String(params.precioMinimo));
+  }
+
+  if (params.precioMaximo !== undefined) {
+    query.set("max_price", String(params.precioMaximo));
+  }
+
+  query.set("sort", params.orden ?? "relevance");
+  query.set("page", String(params.pagina ?? 1));
+  query.set(
+    "page_size",
+    String(params.productosPorPagina ?? 50)
+  );
+
+  const respuesta = await api(
+    `/products?${query.toString()}`
+  );
+
+  return {
+    productos: respuesta.items.map(mapProducto),
+    total: respuesta.total,
+    totalPaginas: respuesta.total_pages,
+  };
+}
+
 interface ListarProductosParams {
   search?: string;
   categoria?: Categoria;

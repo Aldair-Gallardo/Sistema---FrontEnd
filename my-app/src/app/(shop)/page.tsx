@@ -1,38 +1,36 @@
+/* eslint-disable @next/next/no-img-element */
+
 import Image from "next/image";
 import Link from "next/link";
 
-const productosDestacados = [
-  {
-    id: 1,
-    nombre: "Sofá moderno de sala",
-    precio: 299.99,
-    material: "Tela y madera",
-    imagen: "/images/inicio/sofa.png",
-  },
-  {
-    id: 2,
-    nombre: "Mesa de comedor",
-    precio: 199.99,
-    material: "Madera natural",
-    imagen: "/images/inicio/mesa.png",
-  },
-  {
-    id: 3,
-    nombre: "Silla moderna",
-    precio: 49.99,
-    material: "Madera y tela",
-    imagen: "/images/inicio/silla.png",
-  },
-  {
-    id: 4,
-    nombre: "Lámpara de pie",
-    precio: 59.99,
-    material: "Metal y tela",
-    imagen: "/images/inicio/lampara.png",
-  },
-];
+import {
+  listarProductosPublicos,
+  urlImagen,
+} from "@/lib/api/productos";
 
-export default function InicioPage() {
+import {
+  MATERIAL_LABELS,
+  type Producto,
+} from "@/types/producto";
+
+export default async function InicioPage() {
+  let productosDestacados: Producto[] = [];
+
+  try {
+    const resultado = await listarProductosPublicos({
+      pagina: 1,
+      productosPorPagina: 4,
+      orden: "relevance",
+    });
+
+    productosDestacados = resultado.productos;
+  } catch (error) {
+    console.error(
+      "No se pudieron cargar los productos destacados:",
+      error,
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#f7f2e9] text-[#302821]">
       {/* Presentación principal */}
@@ -49,8 +47,8 @@ export default function InicioPage() {
           </h1>
 
           <p className="my-6 max-w-sm leading-7 text-[#766b63]">
-            Diseños duraderos que transforman cualquier espacio en un hogar
-            cómodo, elegante y funcional.
+            Diseños duraderos que transforman cualquier espacio
+            en un hogar cómodo, elegante y funcional.
           </p>
 
           <Link
@@ -61,6 +59,7 @@ export default function InicioPage() {
           </Link>
         </div>
 
+        {/* Imagen principal */}
         <div className="relative h-[280px] overflow-hidden rounded-md bg-[#e5ddd2] shadow-lg sm:h-[360px]">
           <Image
             src="/images/inicio/sala-principal.jpg"
@@ -87,7 +86,9 @@ export default function InicioPage() {
               Nuestra selección
             </p>
 
-            <h2 className="text-2xl font-semibold">Productos destacados</h2>
+            <h2 className="text-2xl font-semibold">
+              Productos destacados
+            </h2>
           </div>
 
           <Link
@@ -99,57 +100,84 @@ export default function InicioPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {productosDestacados.map((producto) => (
-            <article
-              key={producto.id}
-              className="group overflow-hidden rounded-md border border-[#e3d9ce] bg-white transition hover:-translate-y-1 hover:shadow-lg"
-            >
-              <Link
-                href={`/producto/${producto.id}`}
-                className="relative block h-52 bg-[#f2eee8]"
-              >
-                <Image
-                  src={producto.imagen}
-                  alt={producto.nombre}
-                  fill
-                  className="object-contain p-5 transition group-hover:scale-105"
-                  sizes="(max-width: 640px) 100vw, 25vw"
-                />
-              </Link>
+        {productosDestacados.length > 0 ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {productosDestacados.map((producto) => {
+              const imagenPrincipal =
+                producto.imagenes.length > 0
+                  ? urlImagen(producto.imagenes[0])
+                  : "";
 
-              <div className="p-4">
-                <h3 className="mb-1 min-h-10 text-sm font-semibold">
-                  {producto.nombre}
-                </h3>
-
-                <p className="text-base font-bold text-[#795538]">
-                  ${producto.precio.toFixed(2)}
-                </p>
-
-                <p className="mb-4 mt-1 text-xs text-[#887b72]">
-                  {producto.material}
-                </p>
-
-                <div className="grid grid-cols-2 gap-2">
+              return (
+                <article
+                  key={producto.id}
+                  className="group overflow-hidden rounded-md border border-[#e3d9ce] bg-white transition hover:-translate-y-1 hover:shadow-lg"
+                >
+                  {/* Imagen */}
                   <Link
                     href={`/producto/${producto.id}`}
-                    className="flex min-h-9 items-center justify-center rounded border border-[#795538] px-2 text-center text-xs font-semibold text-[#795538] hover:bg-[#f5eee8]"
+                    className="relative flex h-52 items-center justify-center overflow-hidden bg-[#f2eee8]"
                   >
-                    Ver detalle
+                    {imagenPrincipal ? (
+                      <img
+                        src={imagenPrincipal}
+                        alt={producto.nombre}
+                        className="h-full w-full object-contain p-5 transition duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <span className="text-sm text-[#756b63]">
+                        Producto sin imagen
+                      </span>
+                    )}
                   </Link>
 
-                  <Link
-                    href="/carrito"
-                    className="flex min-h-9 items-center justify-center rounded bg-[#795538] px-2 text-center text-xs font-semibold text-white hover:bg-[#60412d]"
-                  >
-                    Agregar al carrito
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+                  {/* Información */}
+                  <div className="p-4">
+                    <h3 className="mb-1 min-h-10 text-sm font-semibold">
+                      {producto.nombre}
+                    </h3>
+
+                    <p className="text-base font-bold text-[#795538]">
+                      ${producto.precio.toFixed(2)}
+                    </p>
+
+                    <p className="mt-1 text-xs text-[#887b72]">
+                      Material:{" "}
+                      {MATERIAL_LABELS[producto.material]}
+                    </p>
+
+                    <p className="mb-4 mt-1 text-xs text-[#887b72]">
+                      Disponibles: {producto.stock}
+                    </p>
+
+                    {/* Botones */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Link
+                        href={`/producto/${producto.id}`}
+                        className="flex min-h-9 items-center justify-center rounded border border-[#795538] px-2 text-center text-xs font-semibold text-[#795538] transition hover:bg-[#f5eee8]"
+                      >
+                        Ver detalle
+                      </Link>
+
+                      <Link
+                        href="/carrito"
+                        className="flex min-h-9 items-center justify-center rounded bg-[#795538] px-2 text-center text-xs font-semibold text-white transition hover:bg-[#60412d]"
+                      >
+                        Agregar
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-[#e3d9ce] bg-white px-6 py-12 text-center">
+            <p className="text-[#756b63]">
+              No se pudieron cargar los productos destacados.
+            </p>
+          </div>
+        )}
       </section>
     </main>
   );

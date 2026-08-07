@@ -1,6 +1,6 @@
 "use client";
 // src/app/providers.tsx
-import { ConfigProvider } from "antd";
+import { App, ConfigProvider } from "antd";
 import { AuthProvider } from "@/hooks/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 
@@ -15,9 +15,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }}
     >
-      <AuthProvider>
-        <CartProvider>{children}</CartProvider>
-      </AuthProvider>
+      <App>
+        <AuthProvider>
+          <CartProvider>{children}</CartProvider>
+        </AuthProvider>
+      </App>
     </ConfigProvider>
   );
 }
