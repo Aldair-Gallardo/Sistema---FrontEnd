@@ -90,7 +90,6 @@ export function Header() {
         <Badge count={totalItems} size="small" offset={[-2, 2]}>
           <ShoppingCartOutlined className="text-text-light text-xl cursor-pointer" />
           
-         
         </Badge>
          </Link>
       </div>
