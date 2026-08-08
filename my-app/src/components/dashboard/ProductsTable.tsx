@@ -6,62 +6,97 @@ import Link from 'next/link';
 import { App, Button, Input, Select, Table, Tag } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { eliminarProducto, listarProductosAdmin } from '@/lib/api/productos';
+import { actualizarProducto, listarProductosAdmin } from '@/lib/api/productos';
 import { CATEGORIA_LABELS, STOCK_BAJO_UMBRAL, type Categoria, type Producto } from '@/types/producto';
 import { useAuth } from '@/hooks/useAuth';
 import { canAccessRoute } from '@/lib/roles';
 
 const PAGE_SIZE = 10;
+// Tope de página que acepta /admin/products (ver admin.py: page_size <= 50).
+// El backend no filtra por activo ni pagina según eso, así que se trae todo
+// lo que calce con búsqueda/categoría y se filtra/pagina acá.
+const BACKEND_PAGE_SIZE = 50;
 
-type FiltroStock = 'todos' | 'bajo';
+type Vista = 'todos' | 'bajo' | 'desactivados';
 
 export function ProductsTable() {
   const { message, modal } = App.useApp();
   const { user } = useAuth();
   // Vendedor (y cualquier rol que no gestione productos) solo tiene lectura: se usa el
-  // mismo permiso que protege /productos/nuevo para decidir si mostrar Nuevo/Editar/Eliminar.
+  // mismo permiso que protege /productos/nuevo para decidir si mostrar Nuevo/Editar/Eliminar/Reactivar.
   const puedeEscribir = canAccessRoute('/productos/nuevo', user?.role);
 
-  const [productos, setProductos] = useState<Producto[] | null>(null);
-  const [total, setTotal] = useState(0);
+  const [todos, setTodos] = useState<Producto[] | null>(null);
   const [pagina, setPagina] = useState(1);
   const [busqueda, setBusqueda] = useState('');
   const [categoria, setCategoria] = useState<Categoria | undefined>();
-  const [filtroStock, setFiltroStock] = useState<FiltroStock>('todos');
+  const [vista, setVista] = useState<Vista>('todos');
 
-  function cargar() {
-    listarProductosAdmin({
+  // Trae todas las páginas de /admin/products (tope 50 por página) encadenando
+  // promesas en vez de async/await, siguiendo el mismo patrón .then()/.catch()
+  // que el resto de las tablas del panel.
+  function traerPagina(paginaBackend: number, acumulado: Producto[]): Promise<Producto[]> {
+    return listarProductosAdmin({
       search: busqueda || undefined,
       categoria,
-      stockBajo: filtroStock === 'bajo',
-      page: pagina,
-      pageSize: PAGE_SIZE,
-    })
-      .then(({ productos: lista, total: totalItems }) => {
-        // El backend no soporta ordenar /admin/products por stock, así que se ordena
-        // acá el resultado de la página actual (los de stock más bajo primero).
-        setProductos([...lista].sort((a, b) => a.stock - b.stock));
-        setTotal(totalItems);
-      })
+      page: paginaBackend,
+      pageSize: BACKEND_PAGE_SIZE,
+    }).then(({ productos: lista, totalPaginas }) => {
+      const nuevoAcumulado = acumulado.concat(lista);
+      return paginaBackend >= totalPaginas ? nuevoAcumulado : traerPagina(paginaBackend + 1, nuevoAcumulado);
+    });
+  }
+
+  function cargar() {
+    traerPagina(1, [])
+      .then(setTodos)
       .catch((error) => message.error(error instanceof Error ? error.message : 'No se pudieron cargar los productos'));
   }
 
   useEffect(() => {
     cargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagina, busqueda, categoria, filtroStock]);
+  }, [busqueda, categoria]);
+
+  // La tabla principal ("Todos" y "Stock bajo") nunca muestra los desactivados;
+  // "Productos desactivados" muestra solo esos. Orden por stock, como antes.
+  const filtrados = (todos ?? [])
+    .filter((p) => (vista === 'desactivados' ? !p.activo : p.activo))
+    .filter((p) => (vista === 'bajo' ? p.stock < STOCK_BAJO_UMBRAL : true))
+    .sort((a, b) => a.stock - b.stock);
+
+  const total = filtrados.length;
+  const productosPagina = filtrados.slice((pagina - 1) * PAGE_SIZE, pagina * PAGE_SIZE);
 
   function handleEliminar(producto: Producto) {
     modal.confirm({
       title: '¿Eliminar este producto?',
-      content: 'Esta acción no se puede deshacer. El producto se eliminará del catálogo.',
+      content: 'El producto pasará a estado inactivo: dejará de verse en el catálogo. Sus datos no se borran de la base de datos.',
       okText: 'Eliminar',
       okButtonProps: { danger: true },
       cancelText: 'Cancelar',
       onOk: async () => {
         try {
-          await eliminarProducto(producto.id);
+          await actualizarProducto(producto.id, { activo: false });
           message.success('Producto eliminado');
+          cargar();
+        } catch (error) {
+          message.error(error instanceof Error ? error.message : 'Ocurrió un error inesperado');
+        }
+      },
+    });
+  }
+
+  function handleReactivar(producto: Producto) {
+    modal.confirm({
+      title: '¿Reactivar este producto?',
+      content: 'Volverá a verse en el catálogo.',
+      okText: 'Reactivar',
+      cancelText: 'Cancelar',
+      onOk: async () => {
+        try {
+          await actualizarProducto(producto.id, { activo: true });
+          message.success('Producto reactivado');
           cargar();
         } catch (error) {
           message.error(error instanceof Error ? error.message : 'Ocurrió un error inesperado');
@@ -90,6 +125,12 @@ export function ProductsTable() {
       key: 'stock',
       render: (stock: number) => (stock < STOCK_BAJO_UMBRAL ? <Tag color="red">{stock}</Tag> : stock),
     },
+    {
+      title: 'Estado',
+      dataIndex: 'activo',
+      key: 'activo',
+      render: (activo: boolean) => (activo ? <Tag color="green">Activo</Tag> : <Tag>Inactivo</Tag>),
+    },
     ...(puedeEscribir
       ? [
           {
@@ -100,7 +141,13 @@ export function ProductsTable() {
                 <Link href={`/productos/${producto.id}`}>
                   <Button size="small" icon={<EditOutlined />} />
                 </Link>
-                <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleEliminar(producto)} />
+                {producto.activo ? (
+                  <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleEliminar(producto)} />
+                ) : (
+                  <Button size="small" onClick={() => handleReactivar(producto)}>
+                    Reactivar
+                  </Button>
+                )}
               </div>
             ),
           },
@@ -150,24 +197,25 @@ export function ProductsTable() {
           options={Object.entries(CATEGORIA_LABELS).map(([value, label]) => ({ value, label }))}
         />
         <Select
-          style={{ minWidth: 160 }}
-          value={filtroStock}
+          style={{ minWidth: 190 }}
+          value={vista}
           onChange={(valor) => {
             setPagina(1);
-            setFiltroStock(valor);
+            setVista(valor);
           }}
           options={[
             { value: 'todos', label: 'Todos' },
             { value: 'bajo', label: 'Stock bajo' },
+            { value: 'desactivados', label: 'Productos desactivados' },
           ]}
         />
       </div>
 
       <Table
         rowKey="id"
-        loading={!productos}
+        loading={!todos}
         columns={columns}
-        dataSource={productos ?? []}
+        dataSource={productosPagina}
         pagination={{
           current: pagina,
           pageSize: PAGE_SIZE,

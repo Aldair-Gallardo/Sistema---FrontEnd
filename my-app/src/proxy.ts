@@ -26,6 +26,8 @@ const DASHBOARD_ROUTES = [
   "/devoluciones-admin",
   "/finanzas",
   "/permisos",
+  "/cambiar-password",
+  "/auditoria",
 ];
 
 const AUTH_ROUTES = ["/login", "/registro"];
@@ -91,6 +93,8 @@ export const config = {
     "/devoluciones-admin/:path*",
     "/finanzas/:path*",
     "/permisos/:path*",
+    "/cambiar-password/:path*",
+    "/auditoria/:path*",
 
     "/login",
     "/registro",

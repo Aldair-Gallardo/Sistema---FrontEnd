@@ -10,4 +10,6 @@ export interface User {
   email: string;
   role: Role;
   email_verified: boolean;
+  /** true cuando el usuario interno todavía tiene la contraseña temporal y debe cambiarla. */
+  mustChangePassword?: boolean;
 }

@@ -107,14 +107,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(email: string, password: string): Promise<User> {
     const data = await loginRequest(email, password);
+    const usuario: User = { ...data.user, mustChangePassword: data.must_change_password };
 
     localStorage.setItem("token", data.access_token);
-    localStorage.setItem("usuario", JSON.stringify(data.user));
+    localStorage.setItem("usuario", JSON.stringify(usuario));
     setCookie("token", data.access_token, TOKEN_MAX_AGE_SECONDS);
-    setCookie("role", data.user.role, TOKEN_MAX_AGE_SECONDS);
+    setCookie("role", usuario.role, TOKEN_MAX_AGE_SECONDS);
 
-    setStoredUser(data.user);
-    return data.user;
+    setStoredUser(usuario);
+    return usuario;
   }
 
   function logout() {
