@@ -54,13 +54,41 @@ export function PedidosTable() {
         border: '1px solid var(--color-sidebar-border)',
       }}
     >
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 20 }}>Mis pedidos</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 20 }}>
+        Mis pedidos
+      </h1>
+
       {!pedidos ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
           <Spin />
         </div>
+      ) : pedidos.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 48 }}>
+          <h2>No tienes pedidos todavía</h2>
+
+          <p style={{ marginBottom: 24, color: '#666' }}>
+            Cuando realices una compra, tus pedidos aparecerán aquí.
+          </p>
+
+          <Link href="/catalogo">
+            <Button
+              type="primary"
+              style={{
+                background: '#6F4E37',
+                borderColor: '#6F4E37',
+              }}
+            >
+              Explorar catálogo
+            </Button>
+          </Link>
+        </div>
       ) : (
-        <Table rowKey="id" columns={columns} dataSource={pedidos} pagination={{ pageSize: 5 }} />
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={pedidos}
+          pagination={{ pageSize: 5 }}
+        />
       )}
     </div>
   );
