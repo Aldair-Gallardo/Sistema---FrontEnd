@@ -3,7 +3,7 @@
 // teca-backend/backend/app/routers/orders.py).
 
 import { api } from "@/lib/api/client";
-import type { EstadoPedido, ItemPedido, PasoPedido, Pedido } from "@/types/cliente";
+import type { EstadoPedido, ItemPedido, PasoPedido, Pedido, TipoMetodoPago } from "@/types/cliente";
 
 interface ItemPedidoBackend {
   product_id: string;
@@ -96,5 +96,53 @@ export async function listarPedidos(): Promise<Pedido[]> {
 
 export async function obtenerPedido(numero: string): Promise<Pedido> {
   const doc = await api(`/orders/${numero}`);
+  return mapPedido(doc);
+}
+
+// El backend solo distingue tarjeta/paypal/bitcoin/yappy (no la marca de la
+// tarjeta guardada) — ver PaymentMethod en teca-backend/backend/app/models.py.
+const METODO_PAGO_BACKEND: Record<TipoMetodoPago, "card" | "paypal"> = {
+  visa: "card",
+  mastercard: "card",
+  paypal: "paypal",
+};
+
+export interface CrearPedidoInput {
+  email: string;
+  items: { productoId: string; cantidad: number }[];
+  direccion: {
+    nombreCompleto: string;
+    telefono: string;
+    provincia: string;
+    ciudad: string;
+    calle: string;
+    referencia?: string;
+  };
+  metodoPago: TipoMetodoPago;
+  cuponCodigo?: string;
+  metodoEnvio?: string;
+}
+
+/** Cierra la compra (POST /orders/checkout): recalcula precios en el servidor,
+ * descuenta stock y —si hay token— asocia el pedido al usuario y le vacía el carrito. */
+export async function crearPedido(input: CrearPedidoInput): Promise<Pedido> {
+  const doc = await api("/orders/checkout", {
+    method: "POST",
+    body: JSON.stringify({
+      email: input.email,
+      items: input.items.map((item) => ({ product_id: item.productoId, quantity: item.cantidad })),
+      shipping_address: {
+        full_name: input.direccion.nombreCompleto,
+        phone: input.direccion.telefono,
+        province: input.direccion.provincia,
+        city: input.direccion.ciudad,
+        address_line: input.direccion.calle,
+        reference: input.direccion.referencia,
+      },
+      payment_method: METODO_PAGO_BACKEND[input.metodoPago],
+      coupon_code: input.cuponCodigo,
+      shipping_method: input.metodoEnvio ?? "envío estándar",
+    }),
+  });
   return mapPedido(doc);
 }

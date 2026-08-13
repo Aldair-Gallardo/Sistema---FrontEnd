@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { App, Button, Checkbox, Form, Input, Modal, Select, Spin, Tag } from 'antd';
-import { PlusOutlined, CreditCardOutlined } from '@ant-design/icons';
+import { CheckCircleFilled, PlusOutlined, CreditCardOutlined } from '@ant-design/icons';
 import {
   actualizarMetodoPago,
   crearMetodoPago,
@@ -61,7 +61,24 @@ interface FormValues {
   principal?: boolean;
 }
 
-export function MetodosPagoList() {
+interface MetodosPagoListProps {
+  /** true = modo "elige un método" (checkout): tarjetas clicables, sin Editar/Eliminar. */
+  modoSeleccion?: boolean;
+  metodoSeleccionadoId?: string;
+  onSeleccionar?: (metodo: MetodoPago) => void;
+  /** Se dispara una vez cuando termina de cargar la lista (para que el checkout preseleccione el principal). */
+  onCargar?: (metodos: MetodoPago[]) => void;
+  /** false oculta el <h1>: úsalo cuando la página ya tiene su propio título (checkout). */
+  mostrarTitulo?: boolean;
+}
+
+export function MetodosPagoList({
+  modoSeleccion = false,
+  metodoSeleccionadoId,
+  onSeleccionar,
+  onCargar,
+  mostrarTitulo = true,
+}: MetodosPagoListProps = {}) {
   const { message, modal } = App.useApp();
   const [form] = Form.useForm<FormValues>();
   const tipoSeleccionado = Form.useWatch('tipo', form);
@@ -73,12 +90,16 @@ export function MetodosPagoList() {
 
   function cargarMetodos() {
     listarMetodosPago()
-      .then(setMetodos)
+      .then((lista) => {
+        setMetodos(lista);
+        onCargar?.(lista);
+      })
       .catch((error) => message.error(error instanceof Error ? error.message : 'No se pudieron cargar tus métodos de pago'));
   }
 
   useEffect(() => {
     cargarMetodos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleAgregar() {
@@ -147,6 +168,7 @@ export function MetodosPagoList() {
       });
       message.success(editando ? 'Método de pago actualizado' : 'Método de pago agregado');
       setModalAbierto(false);
+      if (modoSeleccion && !editando) onSeleccionar?.(guardado);
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Ocurrió un error inesperado');
     } finally {
@@ -164,47 +186,59 @@ export function MetodosPagoList() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Métodos de pago</h1>
+      {mostrarTitulo && <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Métodos de pago</h1>}
 
-      {metodos.map((metodo) => (
-        <div
-          key={metodo.id}
-          style={{
-            background: '#fff',
-            borderRadius: 12,
-            padding: 20,
-            border: '1px solid var(--color-sidebar-border)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 12,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <MetodoIcono tipo={metodo.tipo} />
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <p style={{ fontWeight: 700, margin: 0 }}>{metodo.etiqueta}</p>
-                {metodo.principal && (
-                  <Tag style={{ background: 'var(--color-header)', color: '#fff', border: 'none' }}>Principal</Tag>
-                )}
+      {metodos.map((metodo) => {
+        const seleccionado = modoSeleccion && metodo.id === metodoSeleccionadoId;
+        return (
+          <div
+            key={metodo.id}
+            onClick={modoSeleccion ? () => onSeleccionar?.(metodo) : undefined}
+            style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: 20,
+              border: seleccionado ? '2px solid var(--color-header)' : '1px solid var(--color-sidebar-border)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 12,
+              cursor: modoSeleccion ? 'pointer' : undefined,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              {modoSeleccion && (
+                <CheckCircleFilled
+                  style={{ fontSize: 20, color: seleccionado ? 'var(--color-header)' : '#d9d9d9', flexShrink: 0 }}
+                />
+              )}
+              <MetodoIcono tipo={metodo.tipo} />
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <p style={{ fontWeight: 700, margin: 0 }}>{metodo.etiqueta}</p>
+                  {metodo.principal && (
+                    <Tag style={{ background: 'var(--color-header)', color: '#fff', border: 'none' }}>Principal</Tag>
+                  )}
+                </div>
+                <p style={{ color: '#666', fontSize: 13, margin: '2px 0 0' }}>
+                  {metodo.tipo === 'paypal'
+                    ? metodo.correo
+                    : [metodo.vencimiento && `Vence ${metodo.vencimiento}`, metodo.titular].filter(Boolean).join(', ')}
+                </p>
               </div>
-              <p style={{ color: '#666', fontSize: 13, margin: '2px 0 0' }}>
-                {metodo.tipo === 'paypal'
-                  ? metodo.correo
-                  : [metodo.vencimiento && `Vence ${metodo.vencimiento}`, metodo.titular].filter(Boolean).join(', ')}
-              </p>
             </div>
+            {!modoSeleccion && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button onClick={() => handleEditar(metodo)}>Editar</Button>
+                <Button danger onClick={() => handleEliminar(metodo)}>
+                  Eliminar
+                </Button>
+              </div>
+            )}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button onClick={() => handleEditar(metodo)}>Editar</Button>
-            <Button danger onClick={() => handleEliminar(metodo)}>
-              Eliminar
-            </Button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       <button
         onClick={handleAgregar}

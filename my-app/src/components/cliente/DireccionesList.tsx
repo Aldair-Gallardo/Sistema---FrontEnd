@@ -3,11 +3,28 @@
 
 import { useEffect, useState } from 'react';
 import { App, Button, Checkbox, Form, Input, Modal, Spin, Tag } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { CheckCircleFilled, PlusOutlined } from '@ant-design/icons';
 import { actualizarDireccion, crearDireccion, eliminarDireccion, listarDirecciones } from '@/lib/api/direcciones';
 import type { Direccion, DireccionInput } from '@/types/cliente';
 
-export function DireccionesList() {
+interface DireccionesListProps {
+  /** true = modo "elige una dirección" (checkout): tarjetas clicables, sin Editar/Eliminar. */
+  modoSeleccion?: boolean;
+  direccionSeleccionadaId?: string;
+  onSeleccionar?: (direccion: Direccion) => void;
+  /** Se dispara una vez cuando termina de cargar la lista (para que el checkout preseleccione la principal). */
+  onCargar?: (direcciones: Direccion[]) => void;
+  /** false oculta el <h1>: úsalo cuando la página ya tiene su propio título (checkout). */
+  mostrarTitulo?: boolean;
+}
+
+export function DireccionesList({
+  modoSeleccion = false,
+  direccionSeleccionadaId,
+  onSeleccionar,
+  onCargar,
+  mostrarTitulo = true,
+}: DireccionesListProps = {}) {
   const { message, modal } = App.useApp();
   const [form] = Form.useForm<DireccionInput>();
 
@@ -18,7 +35,10 @@ export function DireccionesList() {
 
   function cargarDirecciones() {
     listarDirecciones()
-      .then(setDirecciones)
+      .then((lista) => {
+        setDirecciones(lista);
+        onCargar?.(lista);
+      })
       .catch((error) => message.error(error instanceof Error ? error.message : 'No se pudieron cargar tus direcciones'));
   }
 
@@ -82,6 +102,7 @@ export function DireccionesList() {
       });
       message.success(editando ? 'Dirección actualizada' : 'Dirección agregada');
       setModalAbierto(false);
+      if (modoSeleccion && !editando) onSeleccionar?.(guardada);
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Ocurrió un error inesperado');
     } finally {
@@ -99,47 +120,61 @@ export function DireccionesList() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Direcciones</h1>
+      {mostrarTitulo && <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Direcciones</h1>}
 
-      {direcciones.map((direccion) => (
-        <div
-          key={direccion.id}
-          style={{
-            background: '#fff',
-            borderRadius: 12,
-            padding: 20,
-            border: '1px solid var(--color-sidebar-border)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 12,
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <p style={{ fontWeight: 700, margin: 0 }}>
-                {direccion.nombreCompleto} - {direccion.calle}
-              </p>
-              {direccion.principal && (
-                <Tag style={{ background: 'var(--color-header)', color: '#fff', border: 'none' }}>Principal</Tag>
+      {direcciones.map((direccion) => {
+        const seleccionada = modoSeleccion && direccion.id === direccionSeleccionadaId;
+        return (
+          <div
+            key={direccion.id}
+            onClick={modoSeleccion ? () => onSeleccionar?.(direccion) : undefined}
+            style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: 20,
+              border: seleccionada ? '2px solid var(--color-header)' : '1px solid var(--color-sidebar-border)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 12,
+              cursor: modoSeleccion ? 'pointer' : undefined,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {modoSeleccion && (
+                <CheckCircleFilled
+                  style={{ fontSize: 20, color: seleccionada ? 'var(--color-header)' : '#d9d9d9', flexShrink: 0 }}
+                />
               )}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <p style={{ fontWeight: 700, margin: 0 }}>
+                    {direccion.nombreCompleto} - {direccion.calle}
+                  </p>
+                  {direccion.principal && (
+                    <Tag style={{ background: 'var(--color-header)', color: '#fff', border: 'none' }}>Principal</Tag>
+                  )}
+                </div>
+                <p style={{ color: '#666', margin: '4px 0 0' }}>
+                  {direccion.ciudad}, {direccion.provincia} · {direccion.telefono}
+                </p>
+                {direccion.referencia && (
+                  <p style={{ color: '#8c8c8c', fontSize: 13, margin: '2px 0 0' }}>Referencia: {direccion.referencia}</p>
+                )}
+              </div>
             </div>
-            <p style={{ color: '#666', margin: '4px 0 0' }}>
-              {direccion.ciudad}, {direccion.provincia} · {direccion.telefono}
-            </p>
-            {direccion.referencia && (
-              <p style={{ color: '#8c8c8c', fontSize: 13, margin: '2px 0 0' }}>Referencia: {direccion.referencia}</p>
+            {!modoSeleccion && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button onClick={() => handleEditar(direccion)}>Editar</Button>
+                <Button danger onClick={() => handleEliminar(direccion)}>
+                  Eliminar
+                </Button>
+              </div>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button onClick={() => handleEditar(direccion)}>Editar</Button>
-            <Button danger onClick={() => handleEliminar(direccion)}>
-              Eliminar
-            </Button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       <button
         onClick={handleAgregar}

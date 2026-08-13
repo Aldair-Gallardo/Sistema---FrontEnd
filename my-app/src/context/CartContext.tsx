@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface CartItem {
   id: string;
@@ -15,32 +16,33 @@ interface CartContextType {
   agregarItem: (item: CartItem) => void;
   actualizarCantidad: (id: string, cantidad: number) => void;
   eliminarItem: (id: string) => void;
+  vaciarCarrito: () => void;
   totalItems: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const STORAGE_KEY = "teca-carrito";
+function leerCarritoGuardado(storageKey: string): CartItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const guardado = localStorage.getItem(storageKey);
+    return guardado ? JSON.parse(guardado) : [];
+  } catch {
+    return [];
+  }
+}
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [cargado, setCargado] = useState(false);
+// El carrito vive por usuario: cada quien tiene su propia clave en localStorage
+// (los que no han iniciado sesión comparten el "cubo" invitado). Remontar este
+// componente interno con key={storageKey} cuando cambia el usuario logueado
+// hace que useState relea desde cero la clave correcta, sin arrastrar items de
+// otra sesión ni pisar el carrito nuevo con el viejo mientras carga.
+function CartProviderInterno({ storageKey, children }: { storageKey: string; children: ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>(() => leerCarritoGuardado(storageKey));
 
-  // Cargar del localStorage al montar
   useEffect(() => {
-    const guardado = localStorage.getItem(STORAGE_KEY);
-    if (guardado) {
-      setItems(JSON.parse(guardado));
-    }
-    setCargado(true);
-  }, []);
-
-  // Guardar cada vez que cambien los items (solo después de cargar)
-  useEffect(() => {
-    if (cargado) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    }
-  }, [items, cargado]);
+    localStorage.setItem(storageKey, JSON.stringify(items));
+  }, [items, storageKey]);
 
   const agregarItem = (nuevoItem: CartItem) => {
     setItems((prev) => {
@@ -66,14 +68,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const vaciarCarrito = () => {
+    setItems([]);
+  };
+
   const totalItems = items.reduce((acc, item) => acc + item.cantidad, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, agregarItem, actualizarCantidad, eliminarItem, totalItems }}
+      value={{ items, agregarItem, actualizarCantidad, eliminarItem, vaciarCarrito, totalItems }}
     >
       {children}
     </CartContext.Provider>
+  );
+}
+
+export function CartProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const storageKey = `teca-carrito:${user?.id ?? "invitado"}`;
+
+  return (
+    <CartProviderInterno key={storageKey} storageKey={storageKey}>
+      {children}
+    </CartProviderInterno>
   );
 }
 
