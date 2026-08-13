@@ -13,19 +13,96 @@ export default function CarritoPage() {
   const envio = 0;
   const total = subtotal + envio;
 
- if (items.length === 0) {
-    return (
-      <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">Mi carrito</h1>
-        <p className="text-gray-500 mb-6">Tu carrito está vacío.</p>
-        <Link href="/catalogo">
-          <Button type="primary" style={{ background: "#6F4E37", borderColor: "#6F4E37" }}>
-            Ver catálogo
-          </Button>
-        </Link>
+if (items.length === 0) {
+  return (
+    <div className="min-h-screen bg-[#F5F1E8] px-8 py-8">
+      <h1 className="text-2xl font-bold mb-10 text-[#1F1F1F]">
+        Carrito de compra
+      </h1>
+
+      {/* Carrito vacío */}
+      <div className="max-w-[910px] mx-auto">
+        <div className="bg-white rounded-xl min-h-[320px] flex flex-col items-center justify-center">
+          
+          {/* Icono */}
+          <div className="w-40 h-24 bg-[#F5F1E8] rounded flex items-center justify-center mb-8">
+            <span className="text-white text-6xl">🛒</span>
+          </div>
+
+          {/* Mensaje */}
+          <h2 className="text-2xl font-bold text-[#1F1F1F]">
+            Tu carrito esta Vacio
+          </h2>
+        </div>
+
+        {/* Botón */}
+        <div className="flex justify-center mt-8">
+          <Link href="/catalogo">
+            <Button
+              type="primary"
+              style={{
+                background: "#6F4E37",
+                borderColor: "#6F4E37",
+                width: "288px",
+                height: "45px",
+                fontWeight: "bold",
+              }}
+            >
+              Explorar Catálogo
+            </Button>
+          </Link>
+        </div>
+
+        {/* Beneficios */}
+        <div className="bg-white rounded-xl mt-5 px-10 py-5 grid grid-cols-3 gap-4 text-center text-xs text-[#6F4E37]">
+          
+          <div className="flex flex-col items-center gap-2">
+            <TruckOutlined
+              style={{
+                fontSize: 22,
+                color: "#806000",
+              }}
+            />
+            <span className="font-semibold leading-tight">
+              Envíos rápidos a
+              <br />
+              todo el país
+            </span>
+          </div>
+
+          <div className="flex flex-col items-center gap-2">
+            <SafetyOutlined
+              style={{
+                fontSize: 22,
+                color: "#806000",
+              }}
+            />
+            <span className="font-semibold leading-tight">
+              Pagos seguros y
+              <br />
+              protegidos
+            </span>
+          </div>
+
+          <div className="flex flex-col items-center gap-2">
+            <SyncOutlined
+              style={{
+                fontSize: 22,
+                color: "#806000",
+              }}
+            />
+            <span className="font-semibold leading-tight">
+              Cambios y
+              <br />
+              devoluciones fáciles
+            </span>
+          </div>
+
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="p-8">
