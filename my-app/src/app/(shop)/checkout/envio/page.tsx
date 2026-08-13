@@ -1,22 +1,57 @@
 "use client";
 
 import { useState } from "react";
-import { Input, Select, Radio, Button, Steps } from "antd";
-import { useCart } from "@/context/CartContext";
+import { Button, Steps } from "antd";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/hooks/useAuth";
+import { DireccionesList } from "@/components/cliente/DireccionesList";
 
 export default function CheckoutEnvioPage() {
+  const { user } = useAuth();
   const { items } = useCart();
-  const [metodoEnvio, setMetodoEnvio] = useState<"misma" | "diferente">("misma");
+  const router = useRouter();
+  const [direccionId, setDireccionId] = useState<string | undefined>();
 
   const subtotal = items.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
   const envio = 0;
   const total = subtotal + envio;
 
+  if (!user) {
+    return (
+      <div className="w-full bg-[#F5F1E8] min-h-screen py-20 px-6 text-center">
+        <p className="text-lg text-gray-600 mb-6">Inicia sesión para continuar con tu compra.</p>
+        <Link href="/login">
+          <Button type="primary" style={{ background: "#6F4E37", borderColor: "#6F4E37" }}>
+            Iniciar sesión
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="w-full bg-[#F5F1E8] min-h-screen py-20 px-6 text-center">
+        <p className="text-lg text-gray-600 mb-6">Tu carrito está vacío.</p>
+        <Link href="/catalogo">
+          <Button type="primary" style={{ background: "#6F4E37", borderColor: "#6F4E37" }}>
+            Explorar catálogo
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  function continuar() {
+    if (!direccionId) return;
+    router.push(`/checkout/pago?direccionId=${direccionId}`);
+  }
+
   return (
     <div className="w-full bg-[#F5F1E8] min-h-screen py-12 px-6">
       <div className="max-w-6xl mx-auto">
-
         {/* Pasos de compra */}
         <Steps
           current={1}
@@ -31,79 +66,27 @@ export default function CheckoutEnvioPage() {
 
         <h1 className="text-4xl font-bold mb-1">Dirección de envío</h1>
         <p className="text-base text-gray-600 mb-10">
-          Completa la información para recibir el pedido
+          Elige a dónde quieres recibir tu pedido
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Formulario */}
-          <div className="lg:col-span-2 bg-white rounded-xl p-8 shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              <div>
-                <label className="block font-bold mb-2">Nombre completo</label>
-                <Input placeholder="Ingresa tu nombre completo" size="large" />
-              </div>
-
-              <div>
-                <label className="block font-bold mb-2">Teléfono</label>
-                <Input placeholder="+507 6384-6732" size="large" />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block font-bold mb-2">Dirección</label>
-                <Input placeholder="Calle y número de casa" size="large" className="mb-3" />
-                <Input placeholder="Apartamento, suite, etc. (Opcional)" size="large" />
-              </div>
-
-              <div>
-                <label className="block font-bold mb-2">Ciudad</label>
-                <Input placeholder="Tu ciudad" size="large" />
-              </div>
-
-              <div>
-                <label className="block font-bold mb-2">Estado / Provincia</label>
-                <Select
-                  placeholder="Selecciona"
-                  size="large"
-                  className="w-full"
-                  options={[
-                    { value: "panama", label: "Panamá" },
-                    { value: "colon", label: "Colón" },
-                    { value: "chiriqui", label: "Chiriquí" },
-                  ]}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block font-bold mb-2">País</label>
-                <Select
-                  placeholder="Selecciona tu país"
-                  size="large"
-                  className="w-full"
-                  defaultValue="panama"
-                  options={[
-                    { value: "panama", label: "Panamá" },
-                    { value: "costa_rica", label: "Costa Rica" },
-                    { value: "colombia", label: "Colombia" },
-                  ]}
-                />
-              </div>
-            </div>
+          {/* Direcciones guardadas del usuario */}
+          <div className="lg:col-span-2">
+            <DireccionesList
+              modoSeleccion
+              mostrarTitulo={false}
+              direccionSeleccionadaId={direccionId}
+              onSeleccionar={(direccion) => setDireccionId(direccion.id)}
+              onCargar={(direcciones) => {
+                if (direccionId) return;
+                const principal = direcciones.find((direccion) => direccion.principal) ?? direcciones[0];
+                if (principal) setDireccionId(principal.id);
+              }}
+            />
           </div>
 
-          {/* Método de envío + resumen */}
+          {/* Resumen */}
           <div className="flex flex-col gap-6">
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h2 className="font-bold text-lg mb-4">Método de envío</h2>
-              <Radio.Group
-                className="flex flex-col gap-4"
-                value={metodoEnvio}
-                onChange={(e) => setMetodoEnvio(e.target.value)}
-              >
-                <Radio value="misma">Enviar a esta dirección</Radio>
-                <Radio value="diferente">Enviar a una dirección diferente</Radio>
-              </Radio.Group>
-            </div>
-
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h2 className="font-bold text-lg mb-4">Resumen del pedido</h2>
 
@@ -127,14 +110,12 @@ export default function CheckoutEnvioPage() {
                 size="large"
                 block
                 className="mt-6"
+                disabled={!direccionId}
+                onClick={continuar}
                 style={{ background: "#6F4E37", borderColor: "#6F4E37" }}
               >
-            
-            <Link href="/pago" className="text-[#6F4E37] font-bold hover:underline">
-              Continuar con el pago
-            </Link>
-          </Button>
-            
+                Continuar con el pago
+              </Button>
             </div>
           </div>
         </div>

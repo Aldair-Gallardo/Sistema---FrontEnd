@@ -19,8 +19,12 @@ interface ProductoBackend {
   stock: number;
   images: string[];
   dimensions?: string;
+  structure?: string;
+  warranty?: string;
   active: boolean;
   created_at: string;
+  rating_avg?: number;
+  rating_count?: number;
 }
 
 function mapProducto(doc: ProductoBackend): Producto {
@@ -35,8 +39,12 @@ function mapProducto(doc: ProductoBackend): Producto {
     stock: doc.stock,
     imagenes: doc.images,
     dimensiones: doc.dimensions,
+    estructura: doc.structure,
+    garantia: doc.warranty,
     activo: doc.active,
     creadoEn: doc.created_at,
+    ratingPromedio: doc.rating_avg ?? 0,
+    ratingConteo: doc.rating_count ?? 0,
   };
 }
 
@@ -121,6 +129,13 @@ export async function listarProductosPublicos(
     total: respuesta.total,
     totalPaginas: respuesta.total_pages,
   };
+}
+
+/** Ficha pública de un producto (catálogo → detalle). A diferencia de obtenerProductoAdmin,
+ * pega directo a GET /products/{id}: no requiere rol interno y solo devuelve productos activos. */
+export async function obtenerProductoPublico(id: string): Promise<Producto> {
+  const doc = await api(`/products/${id}`);
+  return mapProducto(doc);
 }
 
 interface ListarProductosParams {

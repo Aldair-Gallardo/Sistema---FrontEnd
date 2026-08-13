@@ -68,7 +68,7 @@ export function Header() {
             href="/panel"
             className="!text-text-light text-sm font-semibold no-underline"
           >
-            Administrador
+            Administración
           </Link>
         )}
 

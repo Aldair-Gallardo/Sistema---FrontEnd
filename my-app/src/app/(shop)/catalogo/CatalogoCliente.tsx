@@ -17,13 +17,23 @@ type TipoOrden =
   | "precio-mayor"
   | "nombre";
 
-export default function CatalogoCliente() {
+const PRECIO_MAXIMO_TOPE = 3000;
+
+interface CatalogoClienteProps {
+  /** Texto de búsqueda (de /buscar?q=...). Sin esto se comporta como el catálogo completo. */
+  busqueda?: string;
+}
+
+export default function CatalogoCliente({ busqueda }: CatalogoClienteProps) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [intento, setIntento] = useState(0);
 
-  const [precioMaximo, setPrecioMaximo] = useState(500);
+  // Sugerencias para cuando una búsqueda no encuentra nada ("Quizás te interese").
+  const [sugerencias, setSugerencias] = useState<Producto[]>([]);
+
+  const [precioMaximo, setPrecioMaximo] = useState(PRECIO_MAXIMO_TOPE);
 
   const [
     categoriasSeleccionadas,
@@ -50,6 +60,7 @@ export default function CatalogoCliente() {
           pagina: 1,
           productosPorPagina: 50,
           orden: "relevance",
+          search: busqueda || undefined,
         });
 
         if (componenteActivo) {
@@ -75,7 +86,33 @@ export default function CatalogoCliente() {
     return () => {
       componenteActivo = false;
     };
-  }, [intento]);
+  }, [intento, busqueda]);
+
+  // Si la búsqueda no encontró nada, traemos algunos productos generales para
+  // sugerir en "Quizás te interese" (sin el filtro de texto).
+  useEffect(() => {
+    let componenteActivo = true;
+
+    const cargarSugerencias = async () => {
+      if (!busqueda || cargando || productos.length > 0) {
+        if (componenteActivo) setSugerencias([]);
+        return;
+      }
+
+      try {
+        const resultado = await listarProductosPublicos({ pagina: 1, productosPorPagina: 4, orden: "relevance" });
+        if (componenteActivo) setSugerencias(resultado.productos);
+      } catch {
+        if (componenteActivo) setSugerencias([]);
+      }
+    };
+
+    cargarSugerencias();
+
+    return () => {
+      componenteActivo = false;
+    };
+  }, [busqueda, cargando, productos]);
 
   const categorias = useMemo<Categoria[]>(() => {
     return Array.from(
@@ -122,7 +159,7 @@ export default function CatalogoCliente() {
   };
 
   const limpiarFiltros = () => {
-    setPrecioMaximo(500);
+    setPrecioMaximo(PRECIO_MAXIMO_TOPE);
     setCategoriasSeleccionadas([]);
     setMaterialesSeleccionados([]);
     setOrden("recomendados");
@@ -231,8 +268,8 @@ export default function CatalogoCliente() {
             <input
               type="range"
               min={0}
-              max={500}
-              step={10}
+              max={PRECIO_MAXIMO_TOPE}
+              step={50}
               value={precioMaximo}
               onChange={(evento) =>
                 setPrecioMaximo(
@@ -245,7 +282,7 @@ export default function CatalogoCliente() {
 
             <div className="mt-2 flex justify-between text-xs text-[#756b63]">
               <span>$0</span>
-              <span>$500</span>
+              <span>${PRECIO_MAXIMO_TOPE}</span>
             </div>
           </div>
 
@@ -380,6 +417,44 @@ export default function CatalogoCliente() {
                   producto={producto}
                 />
               ))}
+            </div>
+          ) : busqueda && productos.length === 0 ? (
+            <div>
+              <div className="rounded-xl border border-[#e7ddd2] bg-white px-6 py-16 text-center shadow-sm">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  className="mx-auto h-12 w-12 text-[#c9b8a4]"
+                  aria-hidden="true"
+                >
+                  <circle cx="10" cy="10" r="6" />
+                  <path strokeLinecap="round" d="m20 20-4.3-4.3M8 8l4 4m0-4-4 4" />
+                </svg>
+
+                <h2 className="mt-4 text-xl font-semibold text-[#302821]">
+                  No encontramos resultados para &quot;{busqueda}&quot;
+                </h2>
+
+                <p className="mt-2 text-sm text-[#756b63]">
+                  Revisa que la palabra esté bien escrita.
+                </p>
+              </div>
+
+              {sugerencias.length > 0 && (
+                <div className="mt-10">
+                  <h3 className="mb-4 text-lg font-semibold text-[#302821]">
+                    Quizás te interese
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                    {sugerencias.map((producto) => (
+                      <ProductoCard key={producto.id} producto={producto} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="rounded-xl border border-[#e7ddd2] bg-white px-6 py-16 text-center shadow-sm">

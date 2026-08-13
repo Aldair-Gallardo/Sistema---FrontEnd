@@ -34,8 +34,12 @@ export interface Producto {
   stock: number;
   imagenes: string[];
   dimensiones?: string;
+  estructura?: string;
+  garantia?: string;
   activo: boolean;
   creadoEn: string;
+  ratingPromedio: number;
+  ratingConteo: number;
 }
 
 /** Lo que envían los formularios de crear/editar producto. */
