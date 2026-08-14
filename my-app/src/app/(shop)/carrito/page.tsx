@@ -1,7 +1,7 @@
 // src/app/(shop)/carrito/page.tsx
 "use client";
+import { InputNumber, Button, Progress, Typography } from "antd";
 
-import { InputNumber, Button } from "antd";
 import { DeleteOutlined, TruckOutlined, SafetyOutlined, SyncOutlined } from "@ant-design/icons";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
@@ -9,9 +9,20 @@ import { useCart } from "@/context/CartContext";
 export default function CarritoPage() {
   const { items, actualizarCantidad, eliminarItem } = useCart();
 
-  const subtotal = items.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
-  const envio = 0;
-  const total = subtotal + envio;
+  const subtotal = items.reduce(
+  (acc, item) => acc + item.precio * item.cantidad,
+  0
+);
+
+const limiteEnvioGratis = 200;
+
+const progresoEnvio = Math.min(
+  (subtotal / limiteEnvioGratis) * 100,
+  100
+);
+
+const envio = 0;
+const total = subtotal + envio;
 
 if (items.length === 0) {
   return (
@@ -168,7 +179,26 @@ if (items.length === 0) {
               <span>Subtotal</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
+            {subtotal >= limiteEnvioGratis ? (
+  <Typography.Text strong style={{ color: "#389e0d" }}>
+    🎉 Tienes envío gratis
+  </Typography.Text>
+) : (
+  <Typography.Text strong>
+    ⚠️ Te faltan{" "}
+    <span style={{ color: "#389e0d" }}>
+      ${(limiteEnvioGratis - subtotal).toFixed(2)}
+    </span>{" "}
+    para envío gratis
+  </Typography.Text>
+)}
 
+<Progress
+  percent={progresoEnvio}
+  showInfo={false}
+  strokeColor="#52c41a"
+  style={{ marginTop: 12, marginBottom: 16 }}
+/>
             <div className="flex justify-between text-sm pb-3 border-b">
               <span>Envío</span>
               <span>${envio.toFixed(2)}</span>
