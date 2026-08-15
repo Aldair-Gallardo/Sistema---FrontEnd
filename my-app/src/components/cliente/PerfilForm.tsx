@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { App, Avatar, Button, Form, Input, Spin } from 'antd';
+import { App, Avatar, Button, Form, Input, Spin, Switch } from 'antd';
 import { actualizarPerfil, cambiarPassword, obtenerPerfil } from '@/lib/api/cliente';
 import { useAuth } from '@/hooks/useAuth';
 import type { UsuarioCliente } from '@/types/cliente';
@@ -17,6 +17,10 @@ export function PerfilForm() {
   const [guardandoInfo, setGuardandoInfo] = useState(false);
   const [guardandoPassword, setGuardandoPassword] = useState(false);
 
+  const [pedidosNotif, setPedidosNotif] = useState(true);
+  const [disponibilidadNotif, setDisponibilidadNotif] = useState(true);
+  const [ofertasNotif, setOfertasNotif] = useState(true);
+
   useEffect(() => {
     obtenerPerfil()
       .then(setUsuario)
@@ -29,8 +33,39 @@ export function PerfilForm() {
   useEffect(() => {
     if (!usuario) return;
     infoForm.setFieldsValue({ nombre: usuario.nombre, telefono: usuario.telefono, correo: usuario.correo });
+    
+    // Cargar preferencias de notificaciones desde localStorage
+    const savedPrefs = localStorage.getItem(`teca_notif_prefs_${usuario.correo}`);
+    if (savedPrefs) {
+      try {
+        const parsed = JSON.parse(savedPrefs);
+        setPedidosNotif(parsed.pedidos ?? true);
+        setDisponibilidadNotif(parsed.disponibilidad ?? true);
+        setOfertasNotif(parsed.ofertas ?? true);
+      } catch (e) {
+        console.error("Error al parsear preferencias de notificaciones:", e);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario]);
+
+  function savePrefs(key: 'pedidos' | 'disponibilidad' | 'ofertas', value: boolean) {
+    if (!usuario) return;
+    
+    const currentPrefs = {
+      pedidos: key === 'pedidos' ? value : pedidosNotif,
+      disponibilidad: key === 'disponibilidad' ? value : disponibilidadNotif,
+      ofertas: key === 'ofertas' ? value : ofertasNotif,
+    };
+    
+    localStorage.setItem(`teca_notif_prefs_${usuario.correo}`, JSON.stringify(currentPrefs));
+    
+    if (key === 'pedidos') setPedidosNotif(value);
+    if (key === 'disponibilidad') setDisponibilidadNotif(value);
+    if (key === 'ofertas') setOfertasNotif(value);
+
+    message.success('Preferencias actualizadas');
+  }
 
   async function handleGuardarInfo(values: { nombre: string; telefono?: string }) {
     setGuardandoInfo(true);
@@ -158,6 +193,73 @@ export function PerfilForm() {
             Actualizar contraseña
           </Button>
         </Form>
+      </div>
+
+      {/* Preferencias de notificaciones */}
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 12,
+          padding: 24,
+          border: '1px solid var(--color-sidebar-border)',
+        }}
+      >
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Preferencias de notificaciones</h2>
+        <p style={{ color: '#666', fontSize: 13, marginBottom: 20 }}>
+          Elige qué tipo de notificaciones deseas recibir. Las notificaciones críticas de transacciones y seguridad no se pueden desactivar.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Actualizaciones de pedido */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>Actualizaciones de pedido</h4>
+              <p style={{ color: '#8c8c8c', fontSize: 12, margin: '2px 0 0 0' }}>
+                Recibe correos con el estado de preparación y envío de tus compras.
+              </p>
+            </div>
+            <Switch checked={pedidosNotif} onChange={(val) => savePrefs('pedidos', val)} />
+          </div>
+
+          <hr style={{ border: 0, borderTop: '1px solid #f0f0f0', margin: 0 }} />
+
+          {/* Disponibilidad de producto */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>Disponibilidad de producto</h4>
+              <p style={{ color: '#8c8c8c', fontSize: 12, margin: '2px 0 0 0' }}>
+                Te avisamos cuando los productos que te interesan vuelvan a estar disponibles.
+              </p>
+            </div>
+            <Switch checked={disponibilidadNotif} onChange={(val) => savePrefs('disponibilidad', val)} />
+          </div>
+
+          <hr style={{ border: 0, borderTop: '1px solid #f0f0f0', margin: 0 }} />
+
+          {/* Promociones y ofertas */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>Promociones y ofertas</h4>
+              <p style={{ color: '#8c8c8c', fontSize: 12, margin: '2px 0 0 0' }}>
+                Recibe correos con ofertas exclusivas, cupones de descuento y novedades.
+              </p>
+            </div>
+            <Switch checked={ofertasNotif} onChange={(val) => savePrefs('ofertas', val)} />
+          </div>
+
+          <hr style={{ border: 0, borderTop: '1px solid #f0f0f0', margin: 0 }} />
+
+          {/* Transaccionales críticas */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, opacity: 0.7 }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, margin: 0, color: '#595959' }}>Transaccionales críticas</h4>
+              <p style={{ color: '#8c8c8c', fontSize: 12, margin: '2px 0 0 0' }}>
+                Confirmaciones de compra, facturas y recuperación de contraseña. Obligatorio por seguridad.
+              </p>
+            </div>
+            <Switch checked={true} disabled />
+          </div>
+        </div>
       </div>
     </div>
   );
