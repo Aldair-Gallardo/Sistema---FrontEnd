@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button, Form, Input, message } from "antd";
+import { App, Button, Form, Input } from "antd";
 import { resetPasswordRequest } from "@/lib/api/auth";
 
 export default function ResetPassword() {
+  const { message } = App.useApp();
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");

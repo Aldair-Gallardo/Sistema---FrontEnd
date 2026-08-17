@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button, Form, Input, message } from "antd";
+import { App, Button, Form, Input } from "antd";
 import { forgotPasswordRequest } from "@/lib/api/auth";
 
 export default function ForgotPassword() {
+  const { message } = App.useApp();
   const [cargando, setCargando] = useState(false);
 
   async function manejarEnvio(valores: { email: string }) {
