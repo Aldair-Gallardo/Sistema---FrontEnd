@@ -27,3 +27,32 @@ export async function cambiarPassword(datos: { actual: string; nueva: string }):
     body: JSON.stringify({ current_password: datos.actual, new_password: datos.nueva }),
   });
 }
+
+export interface RegisterRequestData {
+  name: string;
+  email: string;
+  password?: string;
+  phone?: string;
+}
+
+export interface RegisterResponse {
+  id: string;
+  message: string;
+  verification_token?: string;
+}
+
+/** POST /auth/register. Registra un nuevo cliente. */
+export async function registerRequest(datos: RegisterRequestData): Promise<RegisterResponse> {
+  return await api("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(datos),
+  });
+}
+
+/** GET /auth/verify-email/{token}. Verifica el correo de un nuevo cliente. */
+export async function verifyEmailRequest(token: string): Promise<{ message: string }> {
+  return await api(`/auth/verify-email/${encodeURIComponent(token)}`, {
+    method: "GET",
+  });
+}
+
