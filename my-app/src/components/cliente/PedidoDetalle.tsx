@@ -77,7 +77,7 @@ export function PedidoDetalle({ numero }: { numero: string }) {
   const pasos = [
     ...STATUS_FLOW.map((estado) => ({
       title: ESTADO_PEDIDO_LABELS[estado],
-      description: fechaPorEstado[estado] ? formatFechaHora(fechaPorEstado[estado]!) : undefined,
+      content: fechaPorEstado[estado] ? formatFechaHora(fechaPorEstado[estado]!) : undefined,
       status: (fechaPorEstado[estado] ? 'finish' : 'wait') as 'finish' | 'wait',
     })),
     { title: '', icon: <StarOutlined />, status: 'wait' as const, disabled: true },

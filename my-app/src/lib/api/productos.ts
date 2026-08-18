@@ -19,8 +19,12 @@ interface ProductoBackend {
   stock: number;
   images: string[];
   dimensions?: string;
+  structure?: string;
+  warranty?: string;
   active: boolean;
   created_at: string;
+  rating_avg?: number;
+  rating_count?: number;
 }
 
 function mapProducto(doc: ProductoBackend): Producto {
@@ -35,8 +39,12 @@ function mapProducto(doc: ProductoBackend): Producto {
     stock: doc.stock,
     imagenes: doc.images,
     dimensiones: doc.dimensions,
+    estructura: doc.structure,
+    garantia: doc.warranty,
     activo: doc.active,
     creadoEn: doc.created_at,
+    ratingPromedio: doc.rating_avg ?? 0,
+    ratingConteo: doc.rating_count ?? 0,
   };
 }
 
@@ -53,6 +61,81 @@ function mapProductoInput(input: ProductoInput | Partial<ProductoInput>) {
     dimensions: input.dimensiones,
     active: input.activo,
   };
+}
+
+// ================================
+// Catálogo público
+// ================================
+
+export type OrdenCatalogo =
+  | "relevance"
+  | "price_asc"
+  | "price_desc"
+  | "newest";
+
+export interface ListarCatalogoParams {
+  search?: string;
+  categorias?: Categoria[];
+  materiales?: MaterialProducto[];
+  precioMinimo?: number;
+  precioMaximo?: number;
+  orden?: OrdenCatalogo;
+  pagina?: number;
+  productosPorPagina?: number;
+}
+
+export async function listarProductosPublicos(
+  params: ListarCatalogoParams = {}
+): Promise<{
+  productos: Producto[];
+  total: number;
+  totalPaginas: number;
+}> {
+  const query = new URLSearchParams();
+
+  if (params.search) {
+    query.set("search", params.search);
+  }
+
+  if (params.categorias?.length) {
+    query.set("category", params.categorias.join(","));
+  }
+
+  if (params.materiales?.length) {
+    query.set("material", params.materiales.join(","));
+  }
+
+  if (params.precioMinimo !== undefined) {
+    query.set("min_price", String(params.precioMinimo));
+  }
+
+  if (params.precioMaximo !== undefined) {
+    query.set("max_price", String(params.precioMaximo));
+  }
+
+  query.set("sort", params.orden ?? "relevance");
+  query.set("page", String(params.pagina ?? 1));
+  query.set(
+    "page_size",
+    String(params.productosPorPagina ?? 50)
+  );
+
+  const respuesta = await api(
+    `/products?${query.toString()}`
+  );
+
+  return {
+    productos: respuesta.items.map(mapProducto),
+    total: respuesta.total,
+    totalPaginas: respuesta.total_pages,
+  };
+}
+
+/** Ficha pública de un producto (catálogo → detalle). A diferencia de obtenerProductoAdmin,
+ * pega directo a GET /products/{id}: no requiere rol interno y solo devuelve productos activos. */
+export async function obtenerProductoPublico(id: string): Promise<Producto> {
+  const doc = await api(`/products/${id}`);
+  return mapProducto(doc);
 }
 
 interface ListarProductosParams {

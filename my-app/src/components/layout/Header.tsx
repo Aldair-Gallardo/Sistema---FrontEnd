@@ -7,6 +7,9 @@ import { Menu, Input } from "antd";
 import { UserOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { isStaffRole } from "@/lib/roles";
+import { Badge } from "antd";
+import { useCart } from "@/context/CartContext";
+
 
 const { Search } = Input;
 
@@ -21,6 +24,7 @@ const menuItems = [
 export function Header() {
   const router = useRouter();
   const { user } = useAuth();
+  const { totalItems } = useCart();
 
   const hayUsuarioLogueado = !!user;
   const esUsuarioInterno = isStaffRole(user?.role);
@@ -64,7 +68,7 @@ export function Header() {
             href="/panel"
             className="!text-text-light text-sm font-semibold no-underline"
           >
-            Administrador
+            Administración
           </Link>
         )}
 
@@ -82,8 +86,12 @@ export function Header() {
         )}
 
         <Link href="/carrito">
-          <ShoppingCartOutlined className="!text-text-light text-xl cursor-pointer" />
-        </Link>
+  
+        <Badge count={totalItems} size="small" offset={[-2, 2]}>
+          <ShoppingCartOutlined className="text-text-light text-xl cursor-pointer" />
+          
+        </Badge>
+         </Link>
       </div>
     </header>
   );

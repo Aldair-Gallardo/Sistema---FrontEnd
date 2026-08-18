@@ -1,11 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ProductoCard from "./ProductoCard";
+import { listarProductosPublicos } from "@/lib/api/productos";
 import {
-  productos,
+  CATEGORIA_LABELS,
+  MATERIAL_LABELS,
+  type Categoria,
+  type MaterialProducto,
   type Producto,
-} from "./productos";
+} from "@/types/producto";
 
 type TipoOrden =
   | "recomendados"
@@ -13,63 +17,149 @@ type TipoOrden =
   | "precio-mayor"
   | "nombre";
 
-const categorias: string[] = Array.from(
-  new Set(
-    productos.map((producto) => producto.categoria),
-  ),
-);
+const PRECIO_MAXIMO_TOPE = 3000;
 
-const materiales: string[] = Array.from(
-  new Set(
-    productos.map((producto) => producto.material),
-  ),
-);
+interface CatalogoClienteProps {
+  /** Texto de búsqueda (de /buscar?q=...). Sin esto se comporta como el catálogo completo. */
+  busqueda?: string;
+}
 
-export default function CatalogoCliente() {
-  const [precioMaximo, setPrecioMaximo] =
-    useState<number>(500);
+export default function CatalogoCliente({ busqueda }: CatalogoClienteProps) {
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [intento, setIntento] = useState(0);
+
+  // Sugerencias para cuando una búsqueda no encuentra nada ("Quizás te interese").
+  const [sugerencias, setSugerencias] = useState<Producto[]>([]);
+
+  const [precioMaximo, setPrecioMaximo] = useState(PRECIO_MAXIMO_TOPE);
 
   const [
     categoriasSeleccionadas,
     setCategoriasSeleccionadas,
-  ] = useState<string[]>([]);
+  ] = useState<Categoria[]>([]);
 
   const [
     materialesSeleccionados,
     setMaterialesSeleccionados,
-  ] = useState<string[]>([]);
+  ] = useState<MaterialProducto[]>([]);
 
   const [orden, setOrden] =
     useState<TipoOrden>("recomendados");
 
-  const alternarCategoria = (categoria: string) => {
-    setCategoriasSeleccionadas((categoriasActuales) => {
-      if (categoriasActuales.includes(categoria)) {
-        return categoriasActuales.filter(
+  useEffect(() => {
+    let componenteActivo = true;
+
+    const cargarProductos = async () => {
+      try {
+        setCargando(true);
+        setError(null);
+
+        const resultado = await listarProductosPublicos({
+          pagina: 1,
+          productosPorPagina: 50,
+          orden: "relevance",
+          search: busqueda || undefined,
+        });
+
+        if (componenteActivo) {
+          setProductos(resultado.productos);
+        }
+      } catch (errorDesconocido) {
+        if (componenteActivo) {
+          setError(
+            errorDesconocido instanceof Error
+              ? errorDesconocido.message
+              : "No se pudieron cargar los productos.",
+          );
+        }
+      } finally {
+        if (componenteActivo) {
+          setCargando(false);
+        }
+      }
+    };
+
+    cargarProductos();
+
+    return () => {
+      componenteActivo = false;
+    };
+  }, [intento, busqueda]);
+
+  // Si la búsqueda no encontró nada, traemos algunos productos generales para
+  // sugerir en "Quizás te interese" (sin el filtro de texto).
+  useEffect(() => {
+    let componenteActivo = true;
+
+    const cargarSugerencias = async () => {
+      if (!busqueda || cargando || productos.length > 0) {
+        if (componenteActivo) setSugerencias([]);
+        return;
+      }
+
+      try {
+        const resultado = await listarProductosPublicos({ pagina: 1, productosPorPagina: 4, orden: "relevance" });
+        if (componenteActivo) setSugerencias(resultado.productos);
+      } catch {
+        if (componenteActivo) setSugerencias([]);
+      }
+    };
+
+    cargarSugerencias();
+
+    return () => {
+      componenteActivo = false;
+    };
+  }, [busqueda, cargando, productos]);
+
+  const categorias = useMemo<Categoria[]>(() => {
+    return Array.from(
+      new Set(
+        productos.map((producto) => producto.categoria),
+      ),
+    );
+  }, [productos]);
+
+  const materiales = useMemo<MaterialProducto[]>(() => {
+    return Array.from(
+      new Set(
+        productos.map((producto) => producto.material),
+      ),
+    );
+  }, [productos]);
+
+  const alternarCategoria = (categoria: Categoria) => {
+    setCategoriasSeleccionadas((actuales) => {
+      if (actuales.includes(categoria)) {
+        return actuales.filter(
           (categoriaActual) =>
             categoriaActual !== categoria,
         );
       }
 
-      return [...categoriasActuales, categoria];
+      return [...actuales, categoria];
     });
   };
 
-  const alternarMaterial = (material: string) => {
-    setMaterialesSeleccionados((materialesActuales) => {
-      if (materialesActuales.includes(material)) {
-        return materialesActuales.filter(
+  const alternarMaterial = (
+    material: MaterialProducto,
+  ) => {
+    setMaterialesSeleccionados((actuales) => {
+      if (actuales.includes(material)) {
+        return actuales.filter(
           (materialActual) =>
             materialActual !== material,
         );
       }
 
-      return [...materialesActuales, material];
+      return [...actuales, material];
     });
   };
 
   const limpiarFiltros = () => {
-    setPrecioMaximo(500);
+    setPrecioMaximo(PRECIO_MAXIMO_TOPE);
     setCategoriasSeleccionadas([]);
     setMaterialesSeleccionados([]);
     setOrden("recomendados");
@@ -101,11 +191,52 @@ export default function CatalogoCliente() {
 
     return ordenarProductos(resultado, orden);
   }, [
+    productos,
     precioMaximo,
     categoriasSeleccionadas,
     materialesSeleccionados,
     orden,
   ]);
+
+  if (cargando) {
+    return (
+      <section className="mx-auto w-[calc(100%-32px)] max-w-7xl pb-20 md:w-[calc(100%-48px)]">
+        <div className="rounded-xl border border-[#e7ddd2] bg-white px-6 py-16 text-center shadow-sm">
+          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-[#e2d5c8] border-t-[#795538]" />
+
+          <p className="mt-4 text-sm text-[#756b63]">
+            Cargando productos...
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="mx-auto w-[calc(100%-32px)] max-w-7xl pb-20 md:w-[calc(100%-48px)]">
+        <div className="rounded-xl border border-red-200 bg-white px-6 py-16 text-center shadow-sm">
+          <h2 className="text-xl font-semibold text-[#302821]">
+            No se pudo cargar el catálogo
+          </h2>
+
+          <p className="mt-2 text-sm text-red-600">
+            {error}
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              setIntento((intentoActual) => intentoActual + 1)
+            }
+            className="mt-5 rounded-md bg-[#795538] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#60412d]"
+          >
+            Intentar nuevamente
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto w-[calc(100%-32px)] max-w-7xl pb-20 md:w-[calc(100%-48px)]">
@@ -137,8 +268,8 @@ export default function CatalogoCliente() {
             <input
               type="range"
               min={0}
-              max={500}
-              step={10}
+              max={PRECIO_MAXIMO_TOPE}
+              step={50}
               value={precioMaximo}
               onChange={(evento) =>
                 setPrecioMaximo(
@@ -151,7 +282,7 @@ export default function CatalogoCliente() {
 
             <div className="mt-2 flex justify-between text-xs text-[#756b63]">
               <span>$0</span>
-              <span>$500</span>
+              <span>${PRECIO_MAXIMO_TOPE}</span>
             </div>
           </div>
 
@@ -178,7 +309,9 @@ export default function CatalogoCliente() {
                     className="h-4 w-4 accent-[#795538]"
                   />
 
-                  <span>{categoria}</span>
+                  <span>
+                    {CATEGORIA_LABELS[categoria]}
+                  </span>
                 </label>
               ))}
             </div>
@@ -207,7 +340,9 @@ export default function CatalogoCliente() {
                     className="h-4 w-4 accent-[#795538]"
                   />
 
-                  <span>{material}</span>
+                  <span>
+                    {MATERIAL_LABELS[material]}
+                  </span>
                 </label>
               ))}
             </div>
@@ -224,7 +359,6 @@ export default function CatalogoCliente() {
 
         {/* Área de productos */}
         <div>
-          {/* Barra superior */}
           <div className="mb-6 flex flex-col gap-4 rounded-xl border border-[#e7ddd2] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-[#51483f]">
               Mostrando{" "}
@@ -275,7 +409,6 @@ export default function CatalogoCliente() {
             </div>
           </div>
 
-          {/* Productos */}
           {productosFiltrados.length > 0 ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
               {productosFiltrados.map((producto) => (
@@ -284,6 +417,44 @@ export default function CatalogoCliente() {
                   producto={producto}
                 />
               ))}
+            </div>
+          ) : busqueda && productos.length === 0 ? (
+            <div>
+              <div className="rounded-xl border border-[#e7ddd2] bg-white px-6 py-16 text-center shadow-sm">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  className="mx-auto h-12 w-12 text-[#c9b8a4]"
+                  aria-hidden="true"
+                >
+                  <circle cx="10" cy="10" r="6" />
+                  <path strokeLinecap="round" d="m20 20-4.3-4.3M8 8l4 4m0-4-4 4" />
+                </svg>
+
+                <h2 className="mt-4 text-xl font-semibold text-[#302821]">
+                  No encontramos resultados para &quot;{busqueda}&quot;
+                </h2>
+
+                <p className="mt-2 text-sm text-[#756b63]">
+                  Revisa que la palabra esté bien escrita.
+                </p>
+              </div>
+
+              {sugerencias.length > 0 && (
+                <div className="mt-10">
+                  <h3 className="mb-4 text-lg font-semibold text-[#302821]">
+                    Quizás te interese
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                    {sugerencias.map((producto) => (
+                      <ProductoCard key={producto.id} producto={producto} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="rounded-xl border border-[#e7ddd2] bg-white px-6 py-16 text-center shadow-sm">

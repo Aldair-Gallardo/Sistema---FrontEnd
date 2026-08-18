@@ -29,6 +29,13 @@ function deleteCookie(name: string) {
   document.cookie = `${name}=; path=/; max-age=0; samesite=lax`;
 }
 
+function getCookie(name: string): string | undefined {
+  return document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${name}=`))
+    ?.split("=")[1];
+}
+
 // Cierra la sesión sola si no hay actividad del usuario (clicks, teclado,
 // scroll) durante este tiempo, aunque el token siga siendo válido.
 const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
@@ -42,11 +49,20 @@ let cachedUser: User | null = null;
 let hydrated = false;
 const listeners = new Set<() => void>();
 
+// La cookie `token` (leída por proxy.ts para las guardas de ruta) es la fuente
+// de verdad de la sesión. Si localStorage quedó con datos de una sesión previa
+// pero la cookie ya no existe (expiró o se borró por separado), tratamos la
+// sesión como cerrada y limpiamos localStorage para que no queden desincronizados.
 function readStoredUser(): User | null {
   try {
     const token = localStorage.getItem("token");
     const guardado = localStorage.getItem("usuario");
     if (!token || !guardado) return null;
+    if (!getCookie("token")) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("usuario");
+      return null;
+    }
     return JSON.parse(guardado) as User;
   } catch {
     return null;
@@ -107,14 +123,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(email: string, password: string): Promise<User> {
     const data = await loginRequest(email, password);
+    const usuario: User = { ...data.user, mustChangePassword: data.must_change_password };
 
     localStorage.setItem("token", data.access_token);
-    localStorage.setItem("usuario", JSON.stringify(data.user));
+    localStorage.setItem("usuario", JSON.stringify(usuario));
     setCookie("token", data.access_token, TOKEN_MAX_AGE_SECONDS);
-    setCookie("role", data.user.role, TOKEN_MAX_AGE_SECONDS);
+    setCookie("role", usuario.role, TOKEN_MAX_AGE_SECONDS);
 
-    setStoredUser(data.user);
-    return data.user;
+    setStoredUser(usuario);
+    return usuario;
   }
 
   function logout() {
