@@ -20,6 +20,24 @@ export async function loginRequest(email: string, password: string): Promise<Log
   return { ...data, user: { ...data.user, role: toRole(data.user.role) } };
 }
 
+export interface ForgotPasswordResponse {
+  message?: string;
+  reset_token?: string; // solo viene si el backend tiene DEV_MODE=true
+}
+
+export async function forgotPasswordRequest(email: string): Promise<ForgotPasswordResponse> {
+  return api("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPasswordRequest(token: string, newPassword: string): Promise<void> {
+  await api("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+}
 /** POST /auth/change-password. También es el endpoint que limpia must_change_password tras la contraseña temporal. */
 export async function cambiarPassword(datos: { actual: string; nueva: string }): Promise<void> {
   await api("/auth/change-password", {
