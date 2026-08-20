@@ -1,6 +1,6 @@
 # Matriz de trazabilidad — User Stories → Pantalla
 
-IDs asignados en el orden en que aparecen en el Trello del equipo (no son IDs oficiales de Trello; si el board tiene numeración propia, reemplazar acá). Excluye tarjetas que no son historias de usuario (ej. "Crear repositorio en GitHub", "Escoger UI Component", "Realizar los wireframes").
+
 
 | ID | Historia de usuario | Pantalla | Ruta | Estado |
 |---|---|---|---|---|
