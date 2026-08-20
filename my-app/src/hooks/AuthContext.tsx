@@ -4,13 +4,14 @@
 import { createContext, useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { App } from "antd";
-import { loginRequest } from "@/lib/api/auth";
+import { loginRequest, registerRequest, type RegisterResponse } from "@/lib/api/auth";
 import type { User } from "@/types/user";
 
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
+  register: (name: string, email: string, password: string, phone?: string) => Promise<RegisterResponse>;
   logout: () => void;
   updateUser: (patch: Partial<User>) => void;
 }
@@ -117,6 +118,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data.user;
   }
 
+  async function register(
+  name: string,
+  email: string,
+  password: string,
+  phone?: string
+): Promise<RegisterResponse> {
+  return registerRequest(name, email, password, phone);
+}
+
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
@@ -136,7 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading: false, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, isLoading: false, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

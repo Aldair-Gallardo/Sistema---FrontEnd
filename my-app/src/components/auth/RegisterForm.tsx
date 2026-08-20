@@ -7,29 +7,37 @@ import { Button, Form, Input, message } from "antd";
 import { useAuth } from "@/hooks/useAuth";
 import { isStaffRole } from "@/lib/roles";
 import { Checkbox } from 'antd';
+import { App } from "antd";
 
 interface RegisterValues {
+  nombre: string;
   email: string;
   password: string;
+  confirmarPassword: string;
 }
 
 export function RegisterForm() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { register } = useAuth();
   const [loading, setLoading] = useState(false);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [form] = Form.useForm<RegisterValues>();
+  const { message } = App.useApp();
 
-  async function handleFinish(values: RegisterValues) {
-    setLoading(true);
-    try {
-      const user = await login(values.email, values.password);
-      router.push(isStaffRole(user.role) ? "/panel" : "/");
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "Ocurrió un error inesperado");
-    } finally {
-      setLoading(false);
-    }
+ async function handleFinish(values: RegisterValues) {
+  setLoading(true);
+  try {
+    await register(values.nombre, values.email, values.password);
+    message.success("Cuenta creada. Revisa tu correo para verificarla.");
+    router.push("/verificar-correo");
+  } catch (error) {
+    message.error(
+      error instanceof Error ? error.message : "Ocurrió un error inesperado"
+    );
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div className="w-96">
@@ -38,7 +46,7 @@ export function RegisterForm() {
       <Form layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Nombre completo"
-          name="Nombre"
+          name="nombre"
           rules={[{ required: true, message: "Ingresa tu nombre completo" }]}
         >
           <Input placeholder="Ingresa tu nombre completo" size="large" type="name" />
@@ -47,7 +55,7 @@ export function RegisterForm() {
         <Form.Item
           label="Correo electrónico"
           name="email"
-          rules={[{ required: true, message: "Ingrese su correo electrónico" }]}
+          rules={[{ required: true, message: "Ingrese su correo electrónico" }, { type: "email", message: "Ingresa un correo electrónico válido"},]}
         >
           <Input placeholder="correo@gmail.com" size="large" type="email" />
         </Form.Item>
@@ -55,15 +63,32 @@ export function RegisterForm() {
         <Form.Item
           label="Contraseña"
           name="password"
-          rules={[{ required: true, message: "Ingrese su contraseña" }]}
+          rules={[{ required: true, message: "Ingrese su contraseña" }, { min: 6, message: "La contraseña debe tener al menos 6 caracteres" },]}
+          hasFeedback
         >
           <Input.Password placeholder="Crea una contraseña" size="large" />
         </Form.Item>
 
         <Form.Item
           label="Confirmar contraseña"
-          name="password1"
-          rules={[{ required: true, message: "Confirme su contraseña" }]}
+          name="confirmarpassword"
+          dependencies={["password"]}
+          hasFeedback
+          rules={[
+          { required: true, message: "Confirma tu contraseña" },
+          ({ getFieldValue }) => ({
+            validator(_, value) {
+              if (!value || getFieldValue("password") === value) {
+                return Promise.resolve();
+              }
+              return Promise.reject(
+                new Error(
+                  "Las contraseñas no coinciden, ingrese nuevamente la contraseña"
+                )
+              );
+            },
+          }),
+        ]}
         >
           <Input.Password placeholder="Confirma tu contraseña" size="large" />
         </Form.Item>
@@ -87,6 +112,7 @@ export function RegisterForm() {
             size="large"
             block
             loading={loading}
+            disabled={!aceptaTerminos}
             style={{ background: "#6F4E37", borderColor: "#6F4E37" }}
           >
             Registrarme

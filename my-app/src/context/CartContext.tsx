@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface CartItem {
   id: number;
@@ -20,27 +21,31 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const STORAGE_KEY = "teca-carrito";
+function getStorageKey(userId: string | undefined) {
+  return `teca-carrito-${userId ?? "invitado"}`;
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [cargado, setCargado] = useState(false);
 
-  // Cargar del localStorage al montar
+  // Cada vez que cambia el usuario (login/logout), carga el carrito
+  // correspondiente a esa cuenta (o al de invitado si no hay sesión).
   useEffect(() => {
-    const guardado = localStorage.getItem(STORAGE_KEY);
-    if (guardado) {
-      setItems(JSON.parse(guardado));
-    }
+    const key = getStorageKey(user?.id);
+    const guardado = localStorage.getItem(key);
+    setItems(guardado ? JSON.parse(guardado) : []);
     setCargado(true);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
-  // Guardar cada vez que cambien los items (solo después de cargar)
+  // Guarda en la clave del usuario actual cada vez que cambian los items
   useEffect(() => {
-    if (cargado) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    }
-  }, [items, cargado]);
+    if (!cargado) return;
+    const key = getStorageKey(user?.id);
+    localStorage.setItem(key, JSON.stringify(items));
+  }, [items, user?.id, cargado]);
 
   const agregarItem = (nuevoItem: CartItem) => {
     setItems((prev) => {

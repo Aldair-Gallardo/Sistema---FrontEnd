@@ -66,9 +66,16 @@ export default function CheckoutEnvioPage() {
                   size="large"
                   className="w-full"
                   options={[
+                    { value: "bocas del toro", label: "Bocas del Toro" },
                     { value: "panama", label: "Panamá" },
-                    { value: "colon", label: "Colón" },
+                    { value: "panama oeste", label: "Panamá Oeste" },
                     { value: "chiriqui", label: "Chiriquí" },
+                    { value: "colon", label: "Colón" },
+                    { value: "cocle", label: "Coclé" },
+                    { value: "darien", label: "Darién" },
+                    { value: "herrera", label: "Herrera" },
+                    { value: "los santos", label: "Los Santos" },
+                    { value: "veraguas", label: "Veraguas" },
                   ]}
                 />
               </div>
@@ -82,8 +89,6 @@ export default function CheckoutEnvioPage() {
                   defaultValue="panama"
                   options={[
                     { value: "panama", label: "Panamá" },
-                    { value: "costa_rica", label: "Costa Rica" },
-                    { value: "colombia", label: "Colombia" },
                   ]}
                 />
               </div>

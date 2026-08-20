@@ -19,3 +19,21 @@ export async function loginRequest(email: string, password: string): Promise<Log
   });
   return { ...data, user: { ...data.user, role: toRole(data.user.role) } };
 }
+
+export interface RegisterResponse {
+  id: string;
+  message: string;
+  verification_token?: string;
+}
+
+export async function registerRequest(
+  name: string,
+  email: string,
+  password: string,
+  phone?: string
+): Promise<RegisterResponse> {
+  return api("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ name, email, password, phone: phone ?? null }),
+  });
+}
