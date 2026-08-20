@@ -1,6 +1,25 @@
 # TECA — Frontend
 
-Frontend de TECA construido con [Next.js](https://nextjs.org) (App Router), [Ant Design](https://ant.design) y [Tailwind CSS](https://tailwindcss.com). Este repositorio es solo el frontend: necesita el backend (`teca-backend`, FastAPI) corriendo aparte para que el login y las demás llamadas a la API funcionen.
+Frontend de TECA, una tienda online con panel administrativo por roles, construido con Next.js. Este repo es solo el frontend: hace falta tener `teca-backend` (FastAPI) corriendo aparte para que el login y el resto de las pantallas con datos funcionen.
+
+## Qué tiene la app
+
+- **Tienda pública**: home, catálogo con filtros, detalle de producto con reseñas, buscador, ofertas, carrito y checkout (envío → pago → confirmación), más FAQ, contacto y "nosotros".
+- **Login y registro**: recuperación de contraseña por correo, verificación de correo al registrarse, y cambio de contraseña obligatorio cuando un usuario interno arranca con contraseña temporal.
+- **Cuenta del cliente**: perfil, historial de pedidos, devoluciones, direcciones guardadas y métodos de pago.
+- **Panel interno**: resumen, usuarios y roles, productos, pedidos, devoluciones, finanzas, permisos y auditoría. Cada sección solo la ve el rol que corresponde.
+
+En el código estas cuatro áreas son carpetas separadas dentro de `src/app` — `(auth)`, `(shop)`, `(cliente)` y `(dashboard)` — usando route groups de Next.js (los paréntesis no aparecen en la URL, son solo para organizar).
+
+## Roles
+
+Aparte del cliente hay seis roles internos: `admin`, `editor`, `manager`, `sales`, `support` y `finance`. El backend los maneja en español (`cliente`, `admin`, `editor`, `encargado`, `vendedor`, `soporte`, `finanzas`); `src/lib/roles.ts` traduce entre los dos idiomas y define qué rol entra a qué parte del panel, por ejemplo `/usuarios` es solo para `admin`, `/finanzas` es `admin` + `finance`, y así.
+
+Esto se controla en dos capas: `src/proxy.ts` (el antiguo `middleware.ts`, renombrado en Next.js 16) revisa las cookies `token`/`role` en el servidor y redirige antes de renderizar la página si el rol no corresponde; después el backend vuelve a validar todo con el JWT en cada request, que es donde está la seguridad real.
+
+## Dónde está cada cosa
+
+Dentro de `src/`, además de `app/` con las rutas: `components/` (organizado por área, más un `layout/` compartido con header, sidebars, etc.), `context/` (el carrito), `hooks/` (`AuthContext` y `useAuth`), `types/` y `lib/`, donde vive `roles.ts`, `theme.ts` (config de Ant Design) y `api/` — un archivo por recurso (productos, pedidos, devoluciones...) que llaman todos a través de `lib/api/client.ts`, el único lugar que arma los `fetch`, pone el token y traduce los errores de la API a mensajes en español.
 
 ## Stack
 
@@ -136,7 +155,7 @@ Abrí [http://localhost:3000](http://localhost:3000) en el navegador. La página
 
 | Comando | Qué hace |
 |---|---|
-| `npm run dev` | Levanta el servidor de desarrollo (con hot reload) en `http://localhost:3000` |
+| `npm run dev` | Levanta el servidor de desarrollo (con hot reload) en `http://localhost:3000`, usando Webpack |
 | `npm run build` | Compila la app para producción |
 | `npm run start` | Sirve el build de producción (requiere correr `build` antes) |
 | `npm run lint` | Corre ESLint sobre el proyecto |
@@ -145,11 +164,11 @@ Abrí [http://localhost:3000](http://localhost:3000) en el navegador. La página
 
 ## Si `npm run dev` congela la PC o va muy lento
 
-Next.js 16 usa **Turbopack** por defecto para `next dev` (antes había que activarlo a mano). En Windows, Turbopack puede volverse muy pesado — sobre todo si el antivirus escanea cada archivo que genera, o si la laptop tiene poca RAM libre — al punto de congelar la PC entera y obligar a reiniciar.
+Next.js 16 usa Turbopack por defecto para `next dev`. En Windows se puso pesado en más de una máquina — sobre todo con el antivirus escaneando cada archivo que genera, o con poca RAM libre — al punto de colgar la PC entera. Por eso el script `dev` de `package.json` fuerza Webpack (`next dev --webpack`) en vez de dejar el default.
 
-Ya cambiamos el script `dev` del `package.json` para usar Webpack en vez de Turbopack, así que si clonaste el repo después de este cambio no deberías tener el problema. Si a alguien le sigue pasando (o clonó antes del cambio), seguir estos pasos en orden dentro de `Sistema---FrontEnd/my-app`:
+Si igual a alguien le anda lento o se le cuelga al levantar el proyecto, seguir estos pasos en orden dentro de `Sistema---FrontEnd/my-app`:
 
-1. **Traer el cambio y limpiar la caché de compilación**
+1. **Traer los últimos cambios y limpiar la caché de compilación**
    ```bash
    git pull
    ```
@@ -202,8 +221,8 @@ Ya cambiamos el script `dev` del `package.json` para usar Webpack en vez de Turb
 - **El puerto 3000 ya está en uso**
   Cerrá el proceso que lo esté usando, o corré `npm run dev -- -p 3001` para levantar en otro puerto.
 
-- **Windows: `npm ci` o `npm run dev` fallan por permisos/PATH**
-  Abrí una terminal nueva después de instalar Node/Git para que tome el PATH actualizado, y evitá correr la terminal como administrador salvo que sea necesario.
+- **Logueado con un rol interno pero el panel me manda a "acceso denegado"**
+  Es esperado si ese rol no tiene acceso a esa sección. Si debería tenerlo, el ajuste va en `src/lib/roles.ts` (`ROUTE_ROLE_MAP`).
 
 - **La PC se congela o va muy lenta al correr `npm run dev`**
   Ver la sección [Si `npm run dev` congela la PC o va muy lento](#si-npm-run-dev-congela-la-pc-o-va-muy-lento) más arriba.
