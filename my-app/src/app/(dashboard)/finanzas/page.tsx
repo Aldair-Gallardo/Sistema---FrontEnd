@@ -1,8 +1,6 @@
 // src/app/(dashboard)/finanzas/page.tsx
+import { FinanzasResumen } from "@/components/dashboard/FinanzasResumen";
+
 export default function FinanasAdminPage() {
-  return (
-    <div className="p-8">
-      <p>Contenido de la pagina de fananzas  (En construcción)</p>
-    </div>
-  );
+  return <FinanzasResumen />;
 }
