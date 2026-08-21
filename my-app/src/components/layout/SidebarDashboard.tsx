@@ -12,7 +12,6 @@ import {
   UndoOutlined,
   DollarOutlined,
   SafetyCertificateOutlined,
-  FileSearchOutlined,
   LogoutOutlined,
   LockOutlined,
 } from '@ant-design/icons';
@@ -32,7 +31,6 @@ const MENU_ITEMS_BASE = [
   { key: 'devoluciones-admin', ruta: '/devoluciones-admin', icon: <UndoOutlined />, texto: 'Devoluciones' },
   { key: 'finanzas', ruta: '/finanzas', icon: <DollarOutlined />, texto: 'Finanzas' },
   { key: 'permisos', ruta: '/permisos', icon: <SafetyCertificateOutlined />, texto: 'Permisos' },
-  { key: 'auditoria', ruta: '/auditoria', icon: <FileSearchOutlined />, texto: 'Auditoría' },
 ];
 
 export default function SidebarDashboard() {

@@ -107,7 +107,6 @@ export const ROUTE_ROLE_MAP: Record<string, Role[]> = {
   "/devoluciones-admin": ["admin", "manager", "support"], // encargado y soporte; vendedor NO tiene alcance aquí
   "/finanzas": ["admin", "finance"], // finanzas: solo reportes financieros
   "/permisos": ["admin"], // no está en el alcance de ningún otro rol de la tabla
-  "/auditoria": ["admin"], // igual que "auditoria" en ROLE_PERMISSIONS del backend: solo admin
   // "/panel" queda abierto a todo el staff a propósito: es la página de aterrizaje
   // tras iniciar sesión (ver landingFor más abajo); si se restringiera solo a admin,
   // el resto de los roles quedaría sin ningún lugar al que el login los mande.
