@@ -20,14 +20,14 @@
 | US-14 | Ver estado de producto agotado y recibir aviso de disponibilidad | Detalle de producto | `/producto/{id}` | Parcial — muestra "sin stock", no hay aviso al reponerse |
 | US-15 | Ver el banner/carrusel de bienvenida | Inicio | `/` | Implementada |
 | US-16 | Agregar al carrito desde el detalle del producto | Detalle de producto | `/producto/{id}` | Implementada |
-| US-17 | Ver y filtrar todos los pedidos desde el panel admin | Pedidos (panel) | `/pedidos` | **No implementada** — pantalla en placeholder |
-| US-18 | Ver resumen financiero y movimientos del mes | Finanzas | `/finanzas` | **No implementada** — pantalla en placeholder |
-| US-19 | Actualizar el estado de un pedido desde el admin | Pedidos (panel) | `/pedidos` | **No implementada** |
+| US-17 | Ver y filtrar todos los pedidos desde el panel admin | Pedidos (panel) | `/pedidos` | Implementada |
+| US-18 | Ver resumen financiero y movimientos del mes | Finanzas | `/finanzas` | Parcial — resumen de ingresos por mes y por método de pago; no hay libro de movimientos con ingreso/gasto (el backend no registra gastos) |
+| US-19 | Actualizar el estado de un pedido desde el admin | Pedidos (panel) | `/pedidos` | Implementada |
 | US-20 | Ver alertas de stock bajo en el panel admin | Productos (panel) | `/productos` | Implementada |
 | US-21 | Registrar entrada de stock de un producto | Productos — editar | `/productos/{id}` | Parcial — se edita el campo stock, sin flujo de "entrada" dedicado |
-| US-22 | Ver reporte de ventas por período | Finanzas | `/finanzas` | **No implementada** |
+| US-22 | Ver reporte de ventas por período | Finanzas | `/finanzas` | Parcial — el reporte es por mes (agregado así por el backend), sin selector de rango de fechas personalizado |
 | US-23 | Crear y gestionar cupones de descuento desde el admin | — | — | **No implementada** — sin rastro en el código |
-| US-24 | Revisar y gestionar solicitudes de devolución desde el admin | Devoluciones (panel) | `/devoluciones-admin` | **No implementada** — pantalla en placeholder |
+| US-24 | Revisar y gestionar solicitudes de devolución desde el admin | Devoluciones (panel) | `/devoluciones-admin` | Implementada |
 | US-25 | Recibir correo de confirmación al realizar una compra | (correo, sin pantalla propia) | — | Implementada (backend) |
 | US-26 | Recibir correo cuando el estado del pedido cambia | (correo, sin pantalla propia) | — | Por confirmar |
 | US-27 | Ordenar productos del catálogo | Catálogo | `/catalogo` | Implementada |
